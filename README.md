@@ -117,44 +117,35 @@ Hovering or clicking an area updates the detail panel with the area's housing fi
 six-group breakdown. The generated outreach data stores each PUMA's group counts so the map sidebar
 and outreach table stay aligned.
 
-Two more lenses sit below the map itself:
+One more lens sits below the map itself:
 
-- **Vulnerability rank vs. low-mid income rank** (`data/low_mid_income_priority.json`) — a scatter
-  chart comparing each PUMA's rank by raw vulnerability against its rank by share of "near-miss"
-  households (80–100% of required income), showing which areas move once you shift focus from "most
-  vulnerable overall" to "closest to self-sufficient." Near-miss households are less likely to
-  already be served by existing low-income assistance. Chula Vista (West) & National City — the #1
-  priority PUMA by raw vulnerability — actually ranks **last (#22)** here, since its vulnerable
-  households are mostly deep-need, not near-miss. Rancho Bernardo & Poway ranks #1 instead (28.3%
-  near-miss share), making it the target for a low-mid income program.
 - **Age composition** (`data/tract_age_demographics.json`) — real Census ACS 5-Year age data (table
-  S0101) for Rancho Bernardo & Poway's tracts specifically, since the synthetic HLB dataset has no
-  real age breakdown. Shows the share of each tract's population that is young adult (18-24) vs.
-  senior (65+), used to inform outreach method (mail vs. digital) there.
+  S0101) for Chula Vista (West) & National City's tracts — the single most economically vulnerable
+  PUMA in San Diego County (63.0% vulnerability rate) — since the synthetic HLB dataset has no real
+  age breakdown. Shows the share of each tract's population that is young adult (18-24) vs. senior
+  (65+), used to inform outreach method (mail vs. digital) there.
 
 ## Project structure
 
 ```
 .
-├── index.html                        # accessible application shell and views
+├── index.html                       # accessible application shell and views
 ├── assets/
-│   ├── app.js                        # case workflow, mortgage matching, priority support, map, and chart behavior
-│   └── styles.css                    # responsive dashboard design
+│   ├── app.js                       # case workflow, mortgage matching, priority support, map, and chart behavior
+│   └── styles.css                   # responsive dashboard design
 ├── data/
-│   ├── applications.json             # fictional application records for the prototype
-│   ├── buyer_profiles.json           # fictional buyer-readiness and purchase-planning inputs
-│   ├── low_mid_income_priority.json  # PUMAs ranked by low-mid income (near-miss) priority
-│   ├── mortgage_programs.json        # published program features and official source links
-│   ├── outreach_households.json      # modeled counts and representative synthetic outreach rows
-│   ├── properties.json               # fictional properties and published matching criteria
-│   ├── puma_stats.json               # small (22-row) precomputed PUMA-level summary
-│   └── tract_age_demographics.json   # real Census age data for Rancho Bernardo & Poway tracts
+│   ├── applications.json            # fictional application records for the prototype
+│   ├── buyer_profiles.json          # fictional buyer-readiness and purchase-planning inputs
+│   ├── mortgage_programs.json       # published program features and official source links
+│   ├── outreach_households.json     # modeled counts and representative synthetic outreach rows
+│   ├── properties.json              # fictional properties and published matching criteria
+│   ├── puma_stats.json              # small (22-row) precomputed PUMA-level summary
+│   └── tract_age_demographics.json  # real Census age data for Chula Vista/National City tracts
 ├── scripts/
-│   ├── build_data.py                 # regenerates data/puma_stats.json from the raw CSV
-│   ├── build_outreach_data.py        # regenerates the compact outreach-planning dataset
-│   ├── build_tract_affordability.py  # regenerates census-tract-level affordability stats
-│   ├── rank_low_mid_income.py        # regenerates data/low_mid_income_priority.json
-│   └── fetch_age_demographics.py     # regenerates data/tract_age_demographics.json (needs a Census API key)
+│   ├── build_data.py                # regenerates data/puma_stats.json from the raw CSV
+│   ├── build_outreach_data.py       # regenerates the compact outreach-planning dataset
+│   ├── build_tract_affordability.py # regenerates census-tract-level affordability stats
+│   └── fetch_age_demographics.py    # regenerates data/tract_age_demographics.json (needs a Census API key)
 └── README.md
 ```
 
@@ -193,24 +184,23 @@ To regenerate the outreach audience from the same source CSV:
 python scripts/build_outreach_data.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
 ```
 
-To regenerate the low-mid income priority ranking:
+## Age demographics for outreach targeting
+
+The synthetic HLB dataset only tells us a household has "19+ adults" — no real age breakdown,
+which we need for an actual mail vs. digital outreach decision. This pulls real Census ACS 5-Year
+data (table S0101) for Chula Vista (West) & National City — the single most economically
+vulnerable PUMA in the county (63.0% vulnerability rate, the highest of any PUMA and the largest
+raw count of vulnerable households).
 
 ```bash
-python scripts/rank_low_mid_income.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
-```
-
-This overwrites `data/low_mid_income_priority.json`.
-
-To regenerate the age demographics chart data:
-
-```bash
+python scripts/build_tract_affordability.py
 python scripts/fetch_age_demographics.py --api-key YOUR_CENSUS_API_KEY
 ```
 
-Requires a free [Census API key](https://api.census.gov/data/key_signup.html) and
-`tract_level_affordability.csv` (regenerate with `scripts/build_tract_affordability.py` if
-missing). Overwrites `data/tract_age_demographics.json`. Add `--puma 07330` to target a different
-PUMA instead of the default (Rancho Bernardo & Poway).
+Get a free [Census API key](https://api.census.gov/data/key_signup.html). The first command
+regenerates `tract_level_affordability.csv`, which the second command needs to look up tract-PUMA
+membership. Overwrites `data/tract_age_demographics.json`. Add `--puma <code>` to target a
+different PUMA instead of the default (Chula Vista/National City).
 
 ## Data notes / caveats
 
@@ -229,5 +219,5 @@ PUMA instead of the default (Rancho Bernardo & Poway).
 ## Tech
 
 Plain HTML/CSS/JS + [Plotly.js](https://plotly.com/javascript/) (map) and [Chart.js](https://www.chartjs.org/)
-(scatter and bar charts), both loaded from CDN — no build step, no npm install, no framework.
+(age composition chart), both loaded from CDN — no build step, no npm install, no framework.
 `scripts/build_data.py` is the only place pandas is used, and it only runs when you regenerate the data.

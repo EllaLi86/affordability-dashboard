@@ -41,7 +41,6 @@ const state = {
   mapMode: "vulnerable-count",
   mapContext: null,
   selectedMapPuma: null,
-  shiftChartLoaded: false,
   ageChartLoaded: false,
   toastTimer: null,
 };
@@ -1154,7 +1153,6 @@ function switchView(viewName) {
   if (viewName === "outreach") renderOutreachWorkspace();
   if (viewName === "map") {
     initializeMap();
-    renderShiftChart();
     renderAgeChart();
   }
 }
@@ -1364,58 +1362,6 @@ function showMapDetail(code) {
   document.getElementById("detail-hlb").textContent = formatMoney(puma.median_hlb_year);
   document.getElementById("detail-gap").textContent = `${formatMoney(puma.median_gap_vulnerable)} / year`;
   renderMapGroupBreakdown(area);
-}
-
-async function renderShiftChart() {
-  if (state.shiftChartLoaded) return;
-  state.shiftChartLoaded = true;
-  const statusElement = document.getElementById("shift-chart-status");
-  try {
-    if (!window.Chart) throw new Error("The chart library did not load");
-    const response = await fetch("data/low_mid_income_priority.json");
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    const pumas = data.pumas;
-
-    const maxRank = pumas.length;
-    const points = pumas.map((puma) => ({ x: puma.vulnerability_rank, y: puma.low_mid_priority_rank, name: puma.puma_name }));
-    const colors = pumas.map((puma) => (puma.low_mid_priority_rank < puma.vulnerability_rank ? "#2a78d6" : "#c3c2b7"));
-    const radii = pumas.map((puma) => (puma.puma_name.includes("Rancho Bernardo") || puma.puma_name.includes("Chula Vista (West)") ? 9 : 5));
-
-    new window.Chart(document.getElementById("shiftChart"), {
-      type: "scatter",
-      data: {
-        datasets: [
-          { label: "Reference (no change)", type: "line", data: [{ x: 1, y: 1 }, { x: maxRank, y: maxRank }], borderColor: "#c3c2b7", borderDash: [4, 4], borderWidth: 1, pointRadius: 0, order: 1 },
-          { label: "PUMAs", data: points, backgroundColor: colors, pointRadius: radii, order: 0 },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            callbacks: {
-              label: (item) => {
-                if (item.dataset.label === "Reference (no change)") return "";
-                const puma = item.raw;
-                return [puma.name, `Vulnerability rank #${puma.x}`, `Low-mid priority rank #${puma.y}`];
-              },
-            },
-          },
-        },
-        scales: {
-          x: { title: { display: true, text: "Vulnerability rank (1 = worst overall)" }, min: 0, max: maxRank + 1 },
-          y: { title: { display: true, text: "Low-mid income priority rank (1 = best target)" }, min: 0, max: maxRank + 1 },
-        },
-      },
-    });
-  } catch (error) {
-    state.shiftChartLoaded = false;
-    statusElement.textContent = `Could not load data/low_mid_income_priority.json (${error.message}).`;
-    statusElement.className = "insight-status error";
-  }
 }
 
 async function renderAgeChart() {

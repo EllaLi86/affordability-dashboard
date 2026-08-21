@@ -4,29 +4,23 @@ fetch_age_demographics.py
 Pulls REAL (not synthetic) age-distribution data for San Diego County census
 tracts from the Census Bureau's American Community Survey (ACS 5-Year,
 Table S0101 "Age and Sex"), then filters down to a target PUMA -- by default,
-Rancho Bernardo & Poway (07308), our #1 priority PUMA for a LOW-MID INCOME
-program (highest share of "near-miss" households, per rank_low_mid_income.py).
+Chula Vista (West) & National City (07330), the single most economically
+vulnerable PUMA in San Diego County (63.0% vulnerability rate, the highest
+of any PUMA and the largest raw count of vulnerable households).
 
 Why this table/dataset: the HLB synthetic data only tells us a household has
 "19+ adults" -- no real age breakdown, which we need for an actual mail vs.
 digital outreach decision. The Census Bureau's real ACS data fills that gap.
-
-Why Rancho Bernardo & Poway (and not Chula Vista): Chula Vista is the #1
-priority PUMA by raw vulnerability, but its vulnerable households are mostly
-DEEP-need (82.3%), not near-miss -- it's actually the worst-fit PUMA for a
-low-mid income program (ranks last, #22, in rank_low_mid_income.py). Rancho
-Bernardo & Poway has the highest near-miss share (28.3%) of any PUMA, making
-it the right target for THIS program specifically.
 
 Get a free API key (required as of 2026) at:
     https://api.census.gov/data/key_signup.html
 
 Usage:
     python3 fetch_age_demographics.py --api-key YOUR_KEY_HERE
-    python3 fetch_age_demographics.py --api-key YOUR_KEY_HERE --puma 07330  # target a different PUMA
+    python3 fetch_age_demographics.py --api-key YOUR_KEY_HERE --puma 07308  # target a different PUMA
 
 Outputs:
-    tract_age_demographics.json       -- data for the target PUMA, feeds the dashboard chart
+    data/tract_age_demographics.json  -- data for the target PUMA, feeds the dashboard chart
 """
 
 import argparse
@@ -40,10 +34,11 @@ COUNTY_FIPS = "073"
 
 ACS_YEAR = "2023"  # most recent 5-year release with full tract coverage at time of writing
 
-# Default target: Rancho Bernardo & Poway, #1 priority PUMA for a low-mid
-# income program (28.3% near-miss share -- see rank_low_mid_income.py).
-# Override with --puma to target a different PUMA code.
-DEFAULT_PUMA = "07308"
+# Default target: Chula Vista (West) & National City -- the single most
+# economically vulnerable PUMA in San Diego County (63.0% vulnerability
+# rate, highest of any PUMA, and the largest raw count of vulnerable
+# households: 35,545). Override with --puma to target a different PUMA.
+DEFAULT_PUMA = "07330"
 
 # S0101 "Percent" columns (C02) give pre-computed percentages, so no manual math needed.
 # Full variable list: https://api.census.gov/data/2023/acs/acs5/subject/groups/S0101.html
@@ -114,7 +109,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--api-key", required=True, help="Census API key (required as of 2026)")
     parser.add_argument("--puma", default=DEFAULT_PUMA,
-                         help=f"PUMA code to filter to (default: {DEFAULT_PUMA}, Rancho Bernardo & Poway)")
+                         help=f"PUMA code to filter to (default: {DEFAULT_PUMA}, Chula Vista West & National City)")
     parser.add_argument("--merge-with", default="tract_level_affordability.csv",
                          help="Existing tract-level CSV to merge onto (skipped if not found)")
     args = parser.parse_args()
