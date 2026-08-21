@@ -50,6 +50,8 @@ The Mortgage matching view focuses on first-time buyers in the program's intende
 income segment: households with stable income that may support homeownership, but that still face a
 purchase-price or upfront-cash gap in San Diego's market. It gives staff:
 
+- A one-to-one link back to the main program application through `applicationId`; household income,
+  household composition, documents, and workflow stage are read from that application record.
 - A searchable buyer pipeline with 80%–120% and 120%–150% AMI filters.
 - Buyer-readiness checks for income evidence, homebuyer education, and participating-lender
   preapproval.
@@ -62,7 +64,10 @@ purchase-price or upfront-cash gap in San Diego's market. It gives staff:
 The calculations and matches are planning support only. They do not produce a credit decision,
 preapproval, loan estimate, final program-eligibility determination, or promise of funding. Staff
 must verify the target property's exact jurisdiction and current program rules with the administering
-agency or a participating lender.
+agency or a participating lender. An applicant appears in this pipeline only when the main
+application has `financingPath: "mortgage-matching"` and a corresponding buyer profile. Other
+applications remain in ownership and financing review; absence from Mortgage matching is not a
+denial.
 
 ## Site planning map
 

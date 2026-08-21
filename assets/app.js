@@ -242,11 +242,15 @@ function buyerReadinessLabel(readiness) {
   return labels[readiness] || "Needs review";
 }
 
-function getBuyerRecords() {
-  const query = state.buyerSearch.trim().toLowerCase();
+function getLinkedBuyerRecords() {
   return state.buyerProfiles
     .map((profile) => ({ profile, application: state.applications.find((application) => application.id === profile.applicationId) }))
-    .filter((record) => record.application)
+    .filter((record) => record.application?.financingPath === "mortgage-matching");
+}
+
+function getBuyerRecords() {
+  const query = state.buyerSearch.trim().toLowerCase();
+  return getLinkedBuyerRecords()
     .filter((record) => {
       const ami = record.profile.amiPercent;
       const amiMatch = state.buyerAmiFilter === "all"
@@ -336,16 +340,14 @@ function mortgageMatchLabel(result) {
 }
 
 function renderMortgageMetrics() {
-  const records = state.buyerProfiles
-    .map((profile) => ({ profile, application: state.applications.find((application) => application.id === profile.applicationId) }))
-    .filter((record) => record.application);
+  const records = getLinkedBuyerRecords();
   const firstTime = records.filter((record) => record.profile.firstTimeBuyer).length;
   const matchReady = records.filter((record) => getBuyerReadiness(record) === "match-ready").length;
   const counseling = records.filter((record) => !record.profile.educationComplete).length;
   const medianGapValues = records.map((record) => calculateBuyerCapacity(record).purchaseGap).sort((a, b) => a - b);
   const medianGap = medianGapValues.length ? medianGapValues[Math.floor(medianGapValues.length / 2)] : 0;
   document.getElementById("mortgage-metrics").innerHTML = `
-    <article class="metric-card"><span>Buyers in Pipeline</span><strong>${records.length}</strong><small>low-to-moderate-income profiles</small></article>
+    <article class="metric-card"><span>Linked Mortgage Cases</span><strong>${records.length}</strong><small>of ${state.applications.length} program applications</small></article>
     <article class="metric-card emphasis"><span>First-Time Buyers</span><strong>${firstTime}</strong><small>reported buyer status</small></article>
     <article class="metric-card"><span>Assistance Match-Ready</span><strong>${matchReady}</strong><small>education, documents, and preapproval</small></article>
     <article class="metric-card"><span>Median Purchase Gap</span><strong>${formatMoney(medianGap)}</strong><small>planning estimate at ${state.planningRate.toFixed(2)}%</small></article>
@@ -360,6 +362,7 @@ function renderBuyerList() {
   if (records.length && !records.some((record) => record.application.id === state.selectedBuyerId)) {
     state.selectedBuyerId = records[0].application.id;
   }
+  if (!records.length) state.selectedBuyerId = null;
   document.getElementById("buyer-list").innerHTML = records.length ? records.map((record) => {
     const readiness = getBuyerReadiness(record);
     const capacity = calculateBuyerCapacity(record);
@@ -367,7 +370,7 @@ function renderBuyerList() {
     return `
       <button class="buyer-row ${selected ? "selected" : ""}" type="button" data-buyer-id="${escapeHtml(record.application.id)}" aria-pressed="${selected}">
         <span class="applicant-avatar">${escapeHtml(initials(record.application.applicant))}</span>
-        <span class="buyer-row-main"><strong>${escapeHtml(record.application.applicant)}</strong><small>${record.profile.amiPercent}% AMI · ${formatMoney(record.application.income)} income</small><span class="buyer-gap">${formatMoney(capacity.purchaseGap)} purchase gap</span></span>
+        <span class="buyer-row-main"><strong>${escapeHtml(record.application.applicant)}</strong><small>${escapeHtml(record.application.id)} · ${statusLabels[record.application.status]}</small><span class="buyer-gap">${record.profile.amiPercent}% AMI · ${formatMoney(capacity.purchaseGap)} purchase gap</span></span>
         <span class="badge buyer-${readiness}">${buyerReadinessLabel(readiness)}</span>
       </button>
     `;
@@ -393,8 +396,10 @@ function renderMortgageProgramCard(match) {
 }
 
 function renderMortgageDetail() {
-  const profile = state.buyerProfiles.find((item) => item.applicationId === state.selectedBuyerId);
   const application = state.applications.find((item) => item.id === state.selectedBuyerId);
+  const profile = application?.financingPath === "mortgage-matching"
+    ? state.buyerProfiles.find((item) => item.applicationId === state.selectedBuyerId)
+    : null;
   const detail = document.getElementById("mortgage-buyer-detail");
   if (!profile || !application) {
     detail.innerHTML = `<div class="empty-state"><h3>Select a buyer profile</h3><p>Affordability planning and program matches will appear here.</p></div>`;
@@ -415,8 +420,8 @@ function renderMortgageDetail() {
 
   detail.innerHTML = `
     <div class="mortgage-buyer-head">
-      <div><p class="eyebrow">SELECTED BUYER</p><h2>${escapeHtml(application.applicant)}</h2><p>${escapeHtml(application.id)} · ${householdSize(application)}-person household · ${profile.amiPercent}% AMI</p></div>
-      <div class="buyer-head-badges"><span class="badge buyer-${readiness}">${buyerReadinessLabel(readiness)}</span><span class="badge first-buyer">${profile.firstTimeBuyer ? "First-time buyer" : "Repeat buyer"}</span></div>
+      <div><p class="eyebrow">LINKED PROGRAM APPLICATION</p><h2>${escapeHtml(application.applicant)}</h2><p>${escapeHtml(application.id)} · ${statusLabels[application.status]} · ${householdSize(application)}-person household · ${profile.amiPercent}% AMI</p></div>
+      <div class="buyer-head-actions"><div class="buyer-head-badges"><span class="badge buyer-${readiness}">${buyerReadinessLabel(readiness)}</span><span class="badge first-buyer">${profile.firstTimeBuyer ? "First-time buyer" : "Repeat buyer"}</span></div><button class="text-button" type="button" data-return-application>← View application</button></div>
     </div>
 
     <section class="mortgage-next-action">
@@ -584,10 +589,11 @@ function renderTable() {
     const docs = getDocumentSummary(application);
     const matches = getMatchSummary(application);
     const priority = getPriority(application);
+    const mortgageLinked = application.financingPath === "mortgage-matching" && state.buyerProfiles.some((profile) => profile.applicationId === application.id);
     const isSelected = application.id === state.selectedId;
     return `
       <tr data-application-id="${escapeHtml(application.id)}" class="${isSelected ? "selected" : ""}" tabindex="0" aria-selected="${isSelected}">
-        <td><div class="applicant-cell"><span class="applicant-avatar">${escapeHtml(initials(application.applicant))}</span><div><strong>${escapeHtml(application.applicant)}</strong><span>${escapeHtml(application.id)} · ${statusLabels[application.status]}</span></div></div></td>
+        <td><div class="applicant-cell"><span class="applicant-avatar">${escapeHtml(initials(application.applicant))}</span><div><strong>${escapeHtml(application.applicant)}</strong><span>${escapeHtml(application.id)} · ${statusLabels[application.status]}</span><span class="table-financing-state ${mortgageLinked ? "linked" : "review"}">${mortgageLinked ? "$ Mortgage linked" : "Financing review"}</span></div></div></td>
         <td><div class="cell-stack"><strong>${size} people</strong><span>${application.children} ${application.children === 1 ? "child" : "children"}</span></div></td>
         <td><div class="cell-stack gap-cell"><strong>${formatGapCompact(affordabilityGap(application))}</strong><span>affordability gap</span></div></td>
         <td><div class="cell-stack"><strong>${bedroomNeedLabel(application)}</strong><span>${escapeHtml(application.area.split("&")[0].trim())}</span></div></td>
@@ -636,12 +642,15 @@ function renderCasePanel() {
   const nextAction = getNextAction(application, docs, matches);
   const gap = affordabilityGap(application);
   const transition = getNextStage(application.status);
+  const buyerProfile = state.buyerProfiles.find((profile) => profile.applicationId === application.id);
+  const mortgageLinked = application.financingPath === "mortgage-matching" && Boolean(buyerProfile);
+  const preapprovalLabels = { complete: "Complete", "in-progress": "In progress", "not-started": "Not started" };
 
   panel.innerHTML = `
     <div class="case-panel-inner">
       <div class="case-head">
         <div class="case-head-top"><div><h2>${escapeHtml(application.applicant)}</h2><p>${escapeHtml(application.id)} · Updated ${formatDate(application.submitted)}</p></div><span class="badge priority-${priority.level}">${priority.level === "high" ? "High priority" : "Standard review"}</span></div>
-        <div class="case-badges"><span class="badge ${application.status}">${statusLabels[application.status]}</span><span class="human-review-label">Human-reviewed case</span></div>
+        <div class="case-badges"><span class="badge ${application.status}">${statusLabels[application.status]}</span>${mortgageLinked ? '<span class="badge mortgage-linked">Mortgage linked</span>' : ""}<span class="human-review-label">Human-reviewed case</span></div>
       </div>
 
       <div class="case-scroll">
@@ -652,6 +661,7 @@ function renderCasePanel() {
           <div class="next-action-buttons">
             <button class="secondary-button" type="button" data-panel-action="request-documents">Request Documents</button>
             <button class="secondary-button" type="button" data-panel-action="view-matches">View Housing Matches</button>
+            ${mortgageLinked ? '<button class="secondary-button" type="button" data-panel-action="open-mortgage">Open Mortgage Match</button>' : ""}
             <button class="secondary-button" type="button" data-panel-action="contact">Contact Applicant</button>
           </div>
         </section>
@@ -677,6 +687,23 @@ function renderCasePanel() {
           <p class="section-note">The synthetic Household Living Budget is context for need. It is not a final property eligibility determination.</p>
         </section>
 
+        <section class="case-section financing-section">
+          <div class="section-heading-row"><div><h3>Purchase financing pathway</h3><p>Connected to this program application</p></div><span class="badge ${mortgageLinked ? "mortgage-linked" : "financing-review"}">${mortgageLinked ? "Mortgage referral active" : "Financing review"}</span></div>
+          ${mortgageLinked ? `
+            <p class="financing-summary">This applicant is included in Mortgage Matching using the same household, income, document, and workflow record shown here.</p>
+            <div class="financing-facts">
+              <div><span>Financing route</span><strong>${buyerProfile.preapproval === "complete" ? "Preapproved; seeking assistance" : "Mortgage and assistance matching"}</strong></div>
+              <div><span>AMI</span><strong>${buyerProfile.amiPercent}%</strong></div>
+              <div><span>Target purchase price</span><strong>${formatMoney(buyerProfile.targetPrice)}</strong></div>
+              <div><span>Preapproval</span><strong>${preapprovalLabels[buyerProfile.preapproval]}</strong></div>
+            </div>
+            <button class="secondary-button mortgage-link-button" type="button" data-panel-action="open-mortgage">Open linked mortgage record →</button>
+          ` : `
+            <p class="financing-summary">A mortgage referral is not active for this record. Staff should first confirm the household's ownership goal and a sustainable purchase-financing route; this status is not a denial.</p>
+            <div class="financing-facts"><div><span>Current pathway</span><strong>Ownership and financing review</strong></div><div><span>Mortgage pipeline</span><strong>Not enrolled</strong></div></div>
+          `}
+        </section>
+
         <section class="case-section">
           <h3>Housing need</h3>
           <div class="fact-grid">
@@ -693,6 +720,7 @@ function renderCasePanel() {
             <div class="fact"><span>Missing documents</span><strong>${docs.missing.length}</strong></div>
             <div class="fact"><span>Housing matches found</span><strong>${matches.viable.length}</strong></div>
             <div class="fact"><span>Current stage</span><strong>${statusLabels[application.status]}</strong></div>
+            <div class="fact"><span>Mortgage pathway</span><strong>${mortgageLinked ? "Linked" : "Not active"}</strong></div>
           </div>
         </section>
 
@@ -857,6 +885,7 @@ function addApplication(form) {
     contact: "Not recorded",
     channel: "Manual intake",
     reviewer: "Unassigned",
+    financingPath: "financing-review",
     documents: { identity: false, income: false, residency: false, household: false, housing: false, consent: false, assets: false, application: false, release: false },
     note: "",
   };
@@ -961,6 +990,12 @@ function bindEvents() {
     renderMortgageWorkspace();
   });
   document.getElementById("mortgage-buyer-detail").addEventListener("click", (event) => {
+    if (event.target.closest("[data-return-application]")) {
+      state.selectedId = state.selectedBuyerId;
+      renderApplications();
+      switchView("applications");
+      return;
+    }
     if (!event.target.closest("[data-mortgage-action]")) return;
     showToast("Recommended mortgage-matching task opened for staff follow-up.");
   });
@@ -1016,6 +1051,17 @@ function bindEvents() {
     const panelAction = event.target.closest("[data-panel-action]");
     if (panelAction) {
       const action = panelAction.dataset.panelAction;
+      if (action === "open-mortgage") {
+        state.selectedBuyerId = state.selectedId;
+        state.buyerSearch = "";
+        state.buyerAmiFilter = "all";
+        state.buyerReadinessFilter = "all";
+        document.getElementById("buyer-search").value = "";
+        document.getElementById("buyer-ami-filter").value = "all";
+        document.getElementById("buyer-readiness-filter").value = "all";
+        switchView("mortgage");
+        return;
+      }
       if (action === "request-documents") updateApplication(state.selectedId, { status: "needs-information", reviewer: "Jordan Martinez" }, "Document request prepared and case moved to Needs information.");
       if (action === "view-matches") document.querySelector("[data-matches-section]")?.scrollIntoView({ behavior: "smooth", block: "start" });
       if (action === "contact") showToast("Applicant contact options opened for staff review.");

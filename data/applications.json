@@ -16,6 +16,7 @@
     "contact": "Text message",
     "channel": "Community partner",
     "reviewer": "Jordan Martinez",
+    "financingPath": "housing-support-review",
     "documents": { "identity": true, "income": true, "residency": true, "household": true, "housing": false, "consent": true, "assets": true, "application": true, "release": false },
     "note": "Move-out notice reports a September 1 deadline. Verify the notice before matching."
   },
@@ -36,6 +37,7 @@
     "contact": "Email",
     "channel": "Online application",
     "reviewer": "Jordan Martinez",
+    "financingPath": "mortgage-matching",
     "documents": { "identity": true, "income": true, "residency": true, "household": true, "housing": true, "consent": true, "assets": true, "application": true, "release": true },
     "note": "Household information is complete and ready for property matching."
   },
@@ -56,6 +58,7 @@
     "contact": "Phone call",
     "channel": "Assisted phone application",
     "reviewer": "Nia Brooks",
+    "financingPath": "mortgage-matching",
     "documents": { "identity": true, "income": false, "residency": true, "household": true, "housing": true, "consent": true, "assets": false, "application": true, "release": true },
     "note": "Requested the two most recent pay statements on August 18."
   },
@@ -76,6 +79,7 @@
     "contact": "Phone call",
     "channel": "Community partner",
     "reviewer": "Unassigned",
+    "financingPath": "housing-support-review",
     "documents": { "identity": true, "income": true, "residency": false, "household": true, "housing": true, "consent": true, "assets": true, "application": false, "release": true },
     "note": "Family is in an emergency shelter. Coordinate an alternative residency document review."
   },
@@ -96,6 +100,7 @@
     "contact": "Email",
     "channel": "Online application",
     "reviewer": "Jordan Martinez",
+    "financingPath": "mortgage-matching",
     "documents": { "identity": true, "income": true, "residency": true, "household": true, "housing": true, "consent": true, "assets": true, "application": true, "release": true },
     "note": "Initial document review complete. Compare East County property requirements."
   },
@@ -116,6 +121,7 @@
     "contact": "Text message",
     "channel": "Paper application",
     "reviewer": "Nia Brooks",
+    "financingPath": "mortgage-matching",
     "documents": { "identity": true, "income": false, "residency": true, "household": true, "housing": true, "consent": true, "assets": true, "application": true, "release": false },
     "note": "Request current income verification before advancing the Harbor View or Bayview Courtyard applications."
   },
@@ -136,6 +142,7 @@
     "contact": "Email",
     "channel": "Online application",
     "reviewer": "Jordan Martinez",
+    "financingPath": "mortgage-matching",
     "documents": { "identity": true, "income": true, "residency": true, "household": true, "housing": true, "consent": true, "assets": true, "application": true, "release": false },
     "note": "Applicant requested a Vietnamese interpreter for property calls."
   },
@@ -156,6 +163,7 @@
     "contact": "Phone call",
     "channel": "Community partner",
     "reviewer": "Jordan Martinez",
+    "financingPath": "housing-support-review",
     "documents": { "identity": false, "income": true, "residency": true, "household": true, "housing": true, "consent": true, "assets": false, "application": true, "release": true },
     "note": "Alternative identity documentation may be available through the partner agency."
   },
@@ -176,6 +184,7 @@
     "contact": "Email",
     "channel": "Online application",
     "reviewer": "Jordan Martinez",
+    "financingPath": "mortgage-matching",
     "documents": { "identity": true, "income": true, "residency": true, "household": true, "housing": true, "consent": true, "assets": true, "application": true, "release": true },
     "note": "Placement completed. Schedule the 30-day follow-up."
   },
@@ -196,6 +205,7 @@
     "contact": "Text message",
     "channel": "Paper application",
     "reviewer": "Unassigned",
+    "financingPath": "mortgage-matching",
     "documents": { "identity": true, "income": true, "residency": true, "household": true, "housing": true, "consent": true, "assets": true, "application": true, "release": true },
     "note": "Compare four-bedroom properties and confirm school-location preferences."
   },
@@ -216,6 +226,7 @@
     "contact": "Email",
     "channel": "Online application",
     "reviewer": "Nia Brooks",
+    "financingPath": "mortgage-matching",
     "documents": { "identity": true, "income": true, "residency": true, "household": true, "housing": false, "consent": true, "assets": true, "application": true, "release": true },
     "note": "Waitlisted at East County Commons. Confirm the quarterly update schedule."
   },
@@ -236,6 +247,7 @@
     "contact": "Text message",
     "channel": "Assisted phone application",
     "reviewer": "Jordan Martinez",
+    "financingPath": "housing-support-review",
     "documents": { "identity": true, "income": false, "residency": true, "household": false, "housing": true, "consent": true, "assets": false, "application": true, "release": true },
     "note": "Income verification request is ready to send."
   }
