@@ -92,6 +92,13 @@ has its own audience size, top planning areas, recommended community channel, an
 descriptions use household composition only; they do not claim family relationships that the
 synthetic dataset does not contain.
 
+Staff can add entire groups to a device-local Mailing & Partner List plan, see the combined modeled
+reach and number of channel plans, remove groups, and move representative rows through `Not on
+list`, `Mailing plan`, and `Partner list` stages. This workflow does not create a real mailing list:
+the synthetic source contains no names, addresses, email, phone, or contact consent. Production use
+would require a separate authorized contact system to match consented residents to the selected
+audience definitions.
+
 ## Site planning map
 
 - **Color** = the % of households in that PUMA that are economically vulnerable

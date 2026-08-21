@@ -1,5 +1,6 @@
 const STORAGE_KEY = "housing-access-demo-state-v3";
 const OUTREACH_STORAGE_KEY = "housing-access-outreach-demo-state-v1";
+const OUTREACH_CAMPAIGN_STORAGE_KEY = "housing-access-outreach-campaign-v1";
 const DEMO_START_DATE = new Date("2026-08-20T12:00:00");
 
 const state = {
@@ -32,6 +33,7 @@ const state = {
   outreachSort: "fit",
   selectedOutreachId: null,
   outreachStatuses: {},
+  outreachCampaignGroups: [],
   mapLoaded: false,
   toastTimer: null,
 };
@@ -491,9 +493,9 @@ function renderMortgageWorkspace() {
 }
 
 const outreachPlanStages = {
-  "not-planned": { label: "Not planned", action: "Add to campaign" },
-  "campaign-ready": { label: "Campaign ready", action: "Assign partner" },
-  "partner-assigned": { label: "Partner assigned", action: "Reset plan" },
+  "not-planned": { label: "Not on list", action: "Add to mailing plan" },
+  "campaign-ready": { label: "Mailing plan", action: "Assign partner list" },
+  "partner-assigned": { label: "Partner list", action: "Remove" },
 };
 
 function outreachTierLabel(tier) {
@@ -511,6 +513,19 @@ function loadOutreachStatuses() {
 
 function saveOutreachStatuses() {
   localStorage.setItem(OUTREACH_STORAGE_KEY, JSON.stringify(state.outreachStatuses));
+}
+
+function loadOutreachCampaignGroups() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(OUTREACH_CAMPAIGN_STORAGE_KEY) || "[]");
+    return Array.isArray(stored) ? stored.filter((id) => typeof id === "string") : [];
+  } catch (_error) {
+    return [];
+  }
+}
+
+function saveOutreachCampaignGroups() {
+  localStorage.setItem(OUTREACH_CAMPAIGN_STORAGE_KEY, JSON.stringify(state.outreachCampaignGroups));
 }
 
 function getOutreachStatus(id) {
@@ -565,12 +580,13 @@ function initializeOutreachFilters() {
 function renderOutreachMetrics() {
   if (!state.outreachData) return;
   const { summary } = state.outreachData;
-  const planned = Object.values(state.outreachStatuses).filter((status) => status !== "not-planned").length;
+  const selectedSegments = state.outreachData.segments.filter((segment) => state.outreachCampaignGroups.includes(segment.id));
+  const modeledReach = selectedSegments.reduce((sum, segment) => sum + segment.count, 0);
   document.getElementById("outreach-metrics").innerHTML = `
     <article class="metric-card emphasis"><span>Market-First Audience</span><strong>${formatNumber(summary.marketFirst)}</strong><small>modeled 4–5-person households</small></article>
     <article class="metric-card"><span>Median Audience Income</span><strong>${formatMoney(summary.medianMarketFirstIncome)}</strong><small>low–middle planning segment</small></article>
     <article class="metric-card"><span>Median Affordability Gap</span><strong>${formatMoney(summary.medianMarketFirstGap)}</strong><small>income below modeled HLB</small></article>
-    <article class="metric-card"><span>Campaign Plan</span><strong>${planned}</strong><small>representative rows queued locally</small></article>
+    <article class="metric-card"><span>Mailing Plan</span><strong>${selectedSegments.length} groups</strong><small>${formatNumber(modeledReach)} modeled households</small></article>
   `;
   document.getElementById("outreach-count").textContent = formatCompactNumber(summary.marketFirst);
 }
@@ -606,19 +622,37 @@ function renderOutreachGroups() {
   if (!state.outreachData) return;
   document.getElementById("outreach-groups").innerHTML = state.outreachData.segments.map((segment) => {
     const active = state.outreachSegment === segment.id;
+    const added = state.outreachCampaignGroups.includes(segment.id);
     const topAreas = segment.topAreas.slice(0, 2).map((area) => area.name).join(" · ");
     return `
-      <button type="button" class="outreach-group-card ${active ? "active" : ""}" data-outreach-group="${escapeHtml(segment.id)}" aria-pressed="${active}">
-        <span class="group-priority">Group ${segment.priority}</span>
-        <span class="group-count"><strong>${formatNumber(segment.count)}</strong><small>${segment.share}% of market-first</small></span>
-        <span class="group-card-copy"><strong>${escapeHtml(segment.name)}</strong><small>${escapeHtml(segment.subtitle)}</small></span>
-        <span class="group-card-stats"><span>Median income <b>${formatMoney(segment.medianIncome)}</b></span><span>Median gap <b>${formatMoney(segment.medianGap)}</b></span></span>
-        <span class="group-channel"><small>Best channel</small><strong>${escapeHtml(segment.channel)}</strong></span>
-        <span class="group-message">${escapeHtml(segment.message)}</span>
-        <span class="group-areas">Largest areas: ${escapeHtml(topAreas)}</span>
-      </button>
+      <article class="outreach-group-card ${active ? "active" : ""} ${added ? "in-campaign" : ""}">
+        <button type="button" class="group-card-select" data-outreach-group="${escapeHtml(segment.id)}" aria-pressed="${active}">
+          <span class="group-priority">Group ${segment.priority}</span>
+          <span class="group-count"><strong>${formatNumber(segment.count)}</strong><small>${segment.share}% of market-first</small></span>
+          <span class="group-card-copy"><strong>${escapeHtml(segment.name)}</strong><small>${escapeHtml(segment.subtitle)}</small></span>
+          <span class="group-card-stats"><span>Median income <b>${formatMoney(segment.medianIncome)}</b></span><span>Median gap <b>${formatMoney(segment.medianGap)}</b></span></span>
+          <span class="group-channel"><small>Best channel</small><strong>${escapeHtml(segment.channel)}</strong></span>
+          <span class="group-message">${escapeHtml(segment.message)}</span>
+          <span class="group-areas">Largest areas: ${escapeHtml(topAreas)}</span>
+        </button>
+        <div class="group-campaign-action"><span class="badge ${added ? "campaign-campaign-ready" : "campaign-not-planned"}">${added ? "In mailing plan" : "Not on list"}</span><button class="text-button" type="button" data-campaign-group="${escapeHtml(segment.id)}">${added ? "Remove" : "Add group to mailing plan"}</button></div>
+      </article>
     `;
   }).join("");
+}
+
+function renderOutreachCampaignPlan() {
+  if (!state.outreachData) return;
+  const selected = state.outreachData.segments.filter((segment) => state.outreachCampaignGroups.includes(segment.id));
+  const reach = selected.reduce((sum, segment) => sum + segment.count, 0);
+  const channels = new Set(selected.map((segment) => segment.channel));
+  document.getElementById("mailing-group-count").textContent = `${selected.length} ${selected.length === 1 ? "group" : "groups"}`;
+  document.getElementById("mailing-plan-summary").innerHTML = selected.length ? `
+    <div><span>Modeled reach</span><strong>${formatNumber(reach)}</strong></div><div><span>Channel plans</span><strong>${channels.size}</strong></div>
+  ` : '<div class="mailing-empty"><strong>No groups added yet</strong><span>Choose “Add group to mailing plan” on an audience card.</span></div>';
+  document.getElementById("mailing-group-list").innerHTML = selected.map((segment) => `
+    <div class="mailing-group-item"><div><strong>${escapeHtml(segment.name)}</strong><span>${formatNumber(segment.count)} modeled households · ${escapeHtml(segment.channel)}</span></div><button class="icon-button" type="button" data-remove-campaign-group="${escapeHtml(segment.id)}" aria-label="Remove ${escapeHtml(segment.name)} from mailing plan">×</button></div>
+  `).join("");
 }
 
 function renderOutreachAreas() {
@@ -657,9 +691,22 @@ function renderOutreachDetail() {
 function renderOutreachWorkspace() {
   renderOutreachMetrics();
   renderOutreachGroups();
+  renderOutreachCampaignPlan();
   renderOutreachRows();
   renderOutreachAreas();
   renderOutreachDetail();
+}
+
+function toggleOutreachCampaignGroup(id) {
+  if (state.outreachCampaignGroups.includes(id)) {
+    state.outreachCampaignGroups = state.outreachCampaignGroups.filter((groupId) => groupId !== id);
+    showToast("Audience group removed from the mailing plan.");
+  } else {
+    state.outreachCampaignGroups.push(id);
+    showToast("Audience group added to the mailing plan.");
+  }
+  saveOutreachCampaignGroups();
+  renderOutreachWorkspace();
 }
 
 function advanceOutreachPlan(id) {
@@ -1187,6 +1234,11 @@ function bindEvents() {
     renderOutreachWorkspace();
   }));
   document.querySelector(".outreach-groups-section").addEventListener("click", (event) => {
+    const campaignAction = event.target.closest("[data-campaign-group]");
+    if (campaignAction) {
+      toggleOutreachCampaignGroup(campaignAction.dataset.campaignGroup);
+      return;
+    }
     const group = event.target.closest("[data-outreach-group]");
     if (!group) return;
     state.outreachSegment = group.dataset.outreachGroup;
@@ -1194,6 +1246,10 @@ function bindEvents() {
     document.getElementById("outreach-group-filter").value = state.outreachSegment;
     document.getElementById("outreach-tier-filter").value = "market-first";
     renderOutreachWorkspace();
+  });
+  document.getElementById("mailing-group-list").addEventListener("click", (event) => {
+    const remove = event.target.closest("[data-remove-campaign-group]");
+    if (remove) toggleOutreachCampaignGroup(remove.dataset.removeCampaignGroup);
   });
   document.getElementById("outreach-rows").addEventListener("click", (event) => {
     const action = event.target.closest("[data-outreach-action]");
@@ -1370,6 +1426,8 @@ async function initialize() {
     state.mortgagePrograms = await mortgageProgramsResponse.json();
     state.outreachData = await outreachResponse.json();
     state.outreachStatuses = loadOutreachStatuses();
+    state.outreachCampaignGroups = loadOutreachCampaignGroups()
+      .filter((id) => state.outreachData.segments.some((segment) => segment.id === id));
     state.applications = loadStoredState(await applicationsResponse.json());
     state.selectedId = state.applications.find((application) => application.id === "HA-260211")?.id || getFilteredApplications()[0]?.id || null;
     state.selectedOutreachId = state.outreachData.households.find((household) => household.tier === "market-first")?.id || null;

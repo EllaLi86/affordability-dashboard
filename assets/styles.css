@@ -683,6 +683,8 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
 .outreach-group-card { display: grid; min-width: 0; align-content: start; border: 1px solid var(--line); border-top: 3px solid #a8b7c0; border-radius: 8px; background: white; padding: 13px; text-align: left; box-shadow: 0 1px 3px rgba(24, 47, 66, 0.035); }
 .outreach-group-card:hover { border-color: #9cc6c1; border-top-color: var(--teal-600); }
 .outreach-group-card.active { border-color: var(--teal-600); border-top-color: var(--teal-600); background: #f2faf8; box-shadow: 0 0 0 2px rgba(20, 131, 122, 0.09); }
+.outreach-group-card.in-campaign { border-top-color: var(--green-700); }
+.group-card-select { display: grid; width: 100%; min-width: 0; border: 0; background: transparent; padding: 0; text-align: left; }
 .group-priority { width: max-content; border-radius: 12px; background: var(--navy-950); color: white; padding: 3px 7px; font-size: 8px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; }
 .group-count { display: flex; align-items: baseline; gap: 6px; margin-top: 10px; }
 .group-count strong { color: var(--teal-700); font-family: var(--font-display); font-size: 23px; letter-spacing: -0.03em; }
@@ -698,6 +700,8 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
 .group-channel strong { color: var(--teal-700); font-size: 9px; }
 .group-message { margin-top: 7px; color: var(--slate); font-size: 8px; line-height: 1.45; }
 .group-areas { overflow: hidden; margin-top: 9px; border-top: 1px solid var(--line-soft); color: var(--muted); padding-top: 7px; font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.group-campaign-action { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 10px -13px -13px; border-top: 1px solid var(--line-soft); background: #fafcfc; padding: 9px 12px; }
+.group-campaign-action .text-button { font-size: 8px; }
 .outreach-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; align-items: start; gap: 14px; }
 .outreach-queue-card,
 .outreach-insight-card { overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: white; box-shadow: 0 2px 6px rgba(24, 47, 66, 0.04); }
@@ -736,6 +740,19 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
 .outreach-insight-card .section-heading-row { margin-bottom: 12px; }
 .outreach-insight-card .section-heading-row h2 { margin-bottom: 0; font-size: 16px; }
 .outreach-insight-card .section-heading-row > span { color: var(--muted); font-size: 9px; font-weight: 800; text-transform: uppercase; }
+.mailing-plan-summary { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+.mailing-plan-summary > div:not(.mailing-empty) { display: grid; border-radius: 6px; background: #eff7f5; padding: 8px 9px; }
+.mailing-plan-summary span { color: var(--muted); font-size: 8px; }
+.mailing-plan-summary strong { color: var(--teal-700); font-size: 15px; }
+.mailing-empty { grid-column: 1 / -1; display: grid; border: 1px dashed #c8d4da; border-radius: 6px; padding: 12px; text-align: center; }
+.mailing-empty strong { color: var(--navy-950); font-size: 11px; }
+.mailing-empty span { margin-top: 2px; font-size: 8px; }
+.mailing-group-list { display: grid; margin-top: 9px; }
+.mailing-group-item { display: grid; grid-template-columns: minmax(0, 1fr) 28px; align-items: center; gap: 7px; border-top: 1px solid var(--line-soft); padding: 9px 0; }
+.mailing-group-item > div { display: grid; min-width: 0; }
+.mailing-group-item strong { overflow: hidden; color: var(--navy-950); font-size: 9px; text-overflow: ellipsis; white-space: nowrap; }
+.mailing-group-item span { overflow: hidden; color: var(--muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.mailing-group-item .icon-button { width: 25px; height: 25px; font-size: 13px; }
 .outreach-area-list { display: grid; }
 .outreach-area-row { display: grid; grid-template-columns: 24px minmax(0, 1fr); align-items: start; gap: 8px; border: 0; border-top: 1px solid var(--line-soft); background: transparent; padding: 10px 0; text-align: left; }
 .outreach-area-row:hover { color: var(--teal-700); }
