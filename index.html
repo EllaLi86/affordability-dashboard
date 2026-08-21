@@ -35,6 +35,11 @@
           <span>Applications</span>
           <span class="nav-count" id="nav-new-count">0</span>
         </button>
+        <button class="nav-item" type="button" data-view="mortgage">
+          <span class="nav-icon" aria-hidden="true">$</span>
+          <span>Mortgage matching</span>
+          <span class="nav-count teal-count" id="mortgage-count">0</span>
+        </button>
         <button class="nav-item" type="button" data-view="outreach">
           <span class="nav-icon" aria-hidden="true">◎</span>
           <span>Outreach</span>
@@ -213,6 +218,47 @@
             <aside class="case-panel" id="case-panel" aria-label="Selected application details"></aside>
           </div>
         </div>
+      </section>
+
+      <section class="view" id="mortgage-view" data-view-panel="mortgage">
+        <div class="page-heading mortgage-page-heading">
+          <div>
+            <p class="eyebrow">HOMEOWNERSHIP SUPPORT</p>
+            <h1>Mortgage &amp; Purchase Assistance Matching</h1>
+            <p>Help first-time buyers with stable low-to-moderate incomes bridge the gap between a potentially sustainable mortgage and the cost of a San Diego home.</p>
+          </div>
+        </div>
+
+        <div class="prototype-notice mortgage-notice" role="note">
+          <span class="notice-icon" aria-hidden="true">i</span>
+          <div><strong>Planning support—not loan approval.</strong> Matches compare applicant information with published program features. Participating lenders and program staff verify income, credit, property, funding, and final eligibility.</div>
+          <a href="https://sdhc.org/housing-opportunities/first-time-homebuyers/" target="_blank" rel="noopener">Official SDHC guidance</a>
+        </div>
+
+        <div class="buyer-segment-strip">
+          <div><span class="segment-icon" aria-hidden="true">⌂</span><div><strong>Target buyer profile</strong><small>First-time buyers · younger-stage families · roughly 80%–150% AMI · stable income with a purchase or upfront-cash gap</small></div></div>
+          <div class="segment-tags"><span>First home</span><span>Low–moderate income</span><span>Needs an affordability bridge</span></div>
+        </div>
+
+        <div class="metric-grid" id="mortgage-metrics" aria-label="Mortgage matching summary"></div>
+
+        <div class="mortgage-workspace">
+          <aside class="buyer-list-panel" aria-label="Buyer profiles">
+            <div class="buyer-list-head">
+              <div><h2>Buyer pipeline</h2><p id="buyer-list-summary">Loading buyer profiles…</p></div>
+              <label class="compact-search"><span aria-hidden="true">⌕</span><span class="sr-only">Search buyer profiles</span><input id="buyer-search" type="search" placeholder="Search buyers"></label>
+            </div>
+            <div class="buyer-filters">
+              <label><span class="sr-only">Filter by AMI band</span><select id="buyer-ami-filter"><option value="all">Target range: 80%–150%</option><option value="80-120">80%–120% AMI</option><option value="120-150">120%–150% AMI</option><option value="outside-target">Outside target range</option></select></label>
+              <label><span class="sr-only">Filter by readiness</span><select id="buyer-readiness-filter"><option value="all">All readiness</option><option value="match-ready">Match ready</option><option value="needs-counseling">Needs counseling</option><option value="needs-preapproval">Needs preapproval</option></select></label>
+            </div>
+            <div class="buyer-list" id="buyer-list"></div>
+          </aside>
+
+          <div class="mortgage-detail" id="mortgage-buyer-detail" aria-live="polite"></div>
+        </div>
+
+        <p class="data-footnote">Buyer profiles and calculations are fictional demonstration data. Planning estimates reserve part of the monthly housing budget for taxes, insurance, and association costs, but they are not loan estimates or underwriting results.</p>
       </section>
 
       <section class="view" id="map-view" data-view-panel="map">

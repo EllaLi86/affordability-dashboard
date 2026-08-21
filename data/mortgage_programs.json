@@ -1,0 +1,72 @@
+[
+  {
+    "id": "sdhc-middle-income",
+    "name": "City of San Diego Middle-Income First-Time Homebuyer",
+    "agency": "San Diego Housing Commission",
+    "amiMin": 80,
+    "amiMax": 150,
+    "firstTimeRequired": true,
+    "geography": "city-san-diego",
+    "assistance": "$40,000 deferred down-payment loan plus $10,000 closing-cost grant",
+    "assistanceValue": 50000,
+    "funding": "Funds available",
+    "requirements": ["First-time buyer", "80%–150% AMI", "Owner-occupied home", "Participating lender"],
+    "source": "https://sdhc.org/housing-opportunities/first-time-homebuyers/participating-lenders/"
+  },
+  {
+    "id": "county-moderate-income",
+    "name": "County Moderate-Income Down-Payment Assistance",
+    "agency": "County of San Diego / SDHC",
+    "amiMin": 80,
+    "amiMax": 120,
+    "firstTimeRequired": true,
+    "geography": "county-participating",
+    "assistance": "Deferred-payment loan of up to 17% of the purchase price",
+    "assistancePercent": 17,
+    "funding": "Funds available",
+    "requirements": ["First-time buyer", "80%–120% AMI", "Participating jurisdiction", "Homebuyer education"],
+    "source": "https://sdhc.org/housing-opportunities/first-time-homebuyers/participating-lenders/"
+  },
+  {
+    "id": "chula-vista-fthb",
+    "name": "City of Chula Vista First-Time Homebuyer",
+    "agency": "City of Chula Vista / SDHC",
+    "amiMin": 0,
+    "amiMax": 80,
+    "firstTimeRequired": true,
+    "geography": "chula-vista",
+    "assistance": "Up to 22% of purchase price, capped at $120,000, for down payment and closing costs",
+    "assistancePercent": 22,
+    "assistanceCap": 120000,
+    "funding": "Funds available",
+    "requirements": ["First-time buyer", "At or below 80% AMI", "Chula Vista property", "Homebuyer education"],
+    "source": "https://sdhc.org/housing-opportunities/first-time-homebuyers/participating-lenders/"
+  },
+  {
+    "id": "calhfa-myhome",
+    "name": "CalHFA MyHome Assistance Program",
+    "agency": "California Housing Finance Agency",
+    "amiMin": 0,
+    "amiMax": null,
+    "firstTimeRequired": true,
+    "geography": "california",
+    "assistance": "Deferred-payment junior loan; current assistance and income limits vary by CalHFA program rules",
+    "funding": "Verify with approved loan officer",
+    "requirements": ["First-time buyer", "CalHFA income limits", "Homebuyer education", "CalHFA-approved lender"],
+    "source": "https://www.calhfa.ca.gov/homebuyer/programs/myhome.htm"
+  },
+  {
+    "id": "fha-insured",
+    "name": "FHA-Insured First Mortgage",
+    "agency": "U.S. Department of Housing and Urban Development",
+    "amiMin": 0,
+    "amiMax": null,
+    "firstTimeRequired": false,
+    "geography": "nationwide",
+    "assistance": "Government-insured mortgage with a minimum down payment as low as 3.5%; lender underwriting applies",
+    "minimumDownPercent": 3.5,
+    "funding": "Available through FHA-approved lenders",
+    "requirements": ["FHA-eligible property", "Lender underwriting", "Mortgage insurance", "Minimum cash investment"],
+    "source": "https://www.hud.gov/buying/loans"
+  }
+]

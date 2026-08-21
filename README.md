@@ -44,6 +44,26 @@ and `Not suitable`, always with a reason. These are staff decision aids—not ap
 final eligibility findings. HLB remains context for affordability need and does not replace a
 property's formal income requirements.
 
+## Mortgage and purchase-assistance matching
+
+The Mortgage matching view focuses on first-time buyers in the program's intended low-to-moderate
+income segment: households with stable income that may support homeownership, but that still face a
+purchase-price or upfront-cash gap in San Diego's market. It gives staff:
+
+- A searchable buyer pipeline with 80%–120% and 120%–150% AMI filters.
+- Buyer-readiness checks for income evidence, homebuyer education, and participating-lender
+  preapproval.
+- A transparent affordability-bridge estimate with an editable planning rate, target price,
+  estimated price capacity, purchase gap, and upfront-cash gap.
+- Preliminary matches to official local, state, and federal purchase-assistance or mortgage
+  programs, with the reason, preparation steps, and a direct link to current official requirements.
+- A clear recommended staff action for moving each buyer toward a verified program submission.
+
+The calculations and matches are planning support only. They do not produce a credit decision,
+preapproval, loan estimate, final program-eligibility determination, or promise of funding. Staff
+must verify the target property's exact jurisdiction and current program rules with the administering
+agency or a participating lender.
+
 ## Site planning map
 
 - **Color** = the % of households in that PUMA that are economically vulnerable
@@ -60,10 +80,12 @@ property's formal income requirements.
 .
 ├── index.html                 # accessible application shell and views
 ├── assets/
-│   ├── app.js                 # case workflow, matching rules, priority support, and map behavior
+│   ├── app.js                 # case workflow, mortgage matching, priority support, and map behavior
 │   └── styles.css             # responsive dashboard design
 ├── data/
 │   ├── applications.json      # fictional application records for the prototype
+│   ├── buyer_profiles.json     # fictional buyer-readiness and purchase-planning inputs
+│   ├── mortgage_programs.json  # published program features and official source links
 │   ├── properties.json        # fictional properties and published matching criteria
 │   └── puma_stats.json        # small (22-row) precomputed PUMA-level summary
 ├── scripts/

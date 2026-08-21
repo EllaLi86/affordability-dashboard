@@ -4,7 +4,10 @@ const DEMO_START_DATE = new Date("2026-08-20T12:00:00");
 const state = {
   applications: [],
   properties: [],
+  buyerProfiles: [],
+  mortgagePrograms: [],
   selectedId: null,
+  selectedBuyerId: "HA-260211",
   statusGroup: "all",
   stage: "all",
   priority: "all",
@@ -14,6 +17,10 @@ const state = {
   match: "all",
   search: "",
   sort: "priority",
+  buyerSearch: "",
+  buyerAmiFilter: "all",
+  buyerReadinessFilter: "all",
+  planningRate: 6.5,
   mapLoaded: false,
   toastTimer: null,
 };
@@ -216,6 +223,251 @@ function getMatchSummary(application) {
   const likely = matches.filter((match) => match.result === "likely" || match.result === "potential");
   const verification = matches.filter((match) => match.result === "verification");
   return { matches, viable, likely, verification };
+}
+
+function getBuyerReadiness(record) {
+  if (!record.profile.educationComplete) return "needs-counseling";
+  if (record.profile.preapproval !== "complete") return "needs-preapproval";
+  if (!record.application.documents?.income) return "needs-documents";
+  return "match-ready";
+}
+
+function buyerReadinessLabel(readiness) {
+  const labels = {
+    "match-ready": "Match ready",
+    "needs-counseling": "Needs counseling",
+    "needs-preapproval": "Needs preapproval",
+    "needs-documents": "Needs documents",
+  };
+  return labels[readiness] || "Needs review";
+}
+
+function getBuyerRecords() {
+  const query = state.buyerSearch.trim().toLowerCase();
+  return state.buyerProfiles
+    .map((profile) => ({ profile, application: state.applications.find((application) => application.id === profile.applicationId) }))
+    .filter((record) => record.application)
+    .filter((record) => {
+      const ami = record.profile.amiPercent;
+      const amiMatch = state.buyerAmiFilter === "all"
+        || (state.buyerAmiFilter === "80-120" && ami >= 80 && ami <= 120)
+        || (state.buyerAmiFilter === "120-150" && ami > 120 && ami <= 150)
+        || (state.buyerAmiFilter === "outside-target" && (ami < 80 || ami > 150));
+      const readiness = getBuyerReadiness(record);
+      const readinessMatch = state.buyerReadinessFilter === "all"
+        || readiness === state.buyerReadinessFilter
+        || (state.buyerReadinessFilter === "needs-preapproval" && readiness === "needs-documents");
+      const searchMatch = !query
+        || record.application.applicant.toLowerCase().includes(query)
+        || record.application.id.toLowerCase().includes(query);
+      return amiMatch && readinessMatch && searchMatch;
+    })
+    .sort((a, b) => {
+      const order = { "match-ready": 0, "needs-preapproval": 1, "needs-documents": 2, "needs-counseling": 3 };
+      return order[getBuyerReadiness(a)] - order[getBuyerReadiness(b)] || a.profile.amiPercent - b.profile.amiPercent;
+    });
+}
+
+function calculateBuyerCapacity(record) {
+  const { application, profile } = record;
+  const grossMonthlyIncome = application.income / 12;
+  const planningHousingBudget = grossMonthlyIncome * 0.30;
+  const principalAndInterestBudget = planningHousingBudget * 0.72;
+  const monthlyRate = state.planningRate / 100 / 12;
+  const payments = 360;
+  const loanCapacity = monthlyRate > 0
+    ? principalAndInterestBudget * (1 - Math.pow(1 + monthlyRate, -payments)) / monthlyRate
+    : principalAndInterestBudget * payments;
+  const estimatedPriceCapacity = Math.max(0, loanCapacity + profile.savings);
+  const purchaseGap = Math.max(0, profile.targetPrice - estimatedPriceCapacity);
+  const estimatedUpfrontNeed = profile.targetPrice * 0.055;
+  const upfrontCashGap = Math.max(0, estimatedUpfrontNeed - profile.savings);
+  const monthlyDebtRatio = grossMonthlyIncome ? profile.monthlyDebt / grossMonthlyIncome * 100 : 0;
+  return { grossMonthlyIncome, planningHousingBudget, loanCapacity, estimatedPriceCapacity, purchaseGap, estimatedUpfrontNeed, upfrontCashGap, monthlyDebtRatio };
+}
+
+function matchMortgageProgram(record, program) {
+  const { profile } = record;
+  const incomeFits = (program.amiMin == null || profile.amiPercent >= program.amiMin)
+    && (program.amiMax == null || profile.amiPercent <= program.amiMax);
+  const firstTimeFits = !program.firstTimeRequired || profile.firstTimeBuyer;
+  let location = "pass";
+  if (["city-san-diego", "county-participating", "chula-vista"].includes(program.geography)) location = "verify";
+  const educationNeeded = program.requirements.some((requirement) => requirement.toLowerCase().includes("education")) && !profile.educationComplete;
+  const preapprovalNeeded = profile.preapproval !== "complete" && program.id !== "fha-insured";
+
+  let result;
+  let reason;
+  if (!firstTimeFits) {
+    result = "outside";
+    reason = "First-time buyer requirement is not currently met.";
+  } else if (!incomeFits) {
+    result = "outside";
+    reason = program.amiMax == null ? "Verify the program's current income limit." : `Applicant is outside the displayed ${program.amiMin}%–${program.amiMax}% AMI range.`;
+  } else if (location === "verify") {
+    result = "verify";
+    reason = "Income profile may fit; verify the exact property address and participating jurisdiction.";
+  } else if (educationNeeded || preapprovalNeeded) {
+    result = "prepare";
+    const steps = [educationNeeded ? "homebuyer education" : null, preapprovalNeeded ? "participating-lender preapproval" : null].filter(Boolean);
+    reason = `Profile fits the displayed range; complete ${steps.join(" and ")} before program submission.`;
+  } else {
+    result = "strong";
+    reason = "Strong preliminary match based on AMI band, first-time buyer status, location, and readiness information.";
+  }
+
+  let assistanceEstimate = null;
+  if (program.assistanceValue) assistanceEstimate = program.assistanceValue;
+  if (program.assistancePercent) assistanceEstimate = profile.targetPrice * program.assistancePercent / 100;
+  if (program.assistanceCap && assistanceEstimate) assistanceEstimate = Math.min(assistanceEstimate, program.assistanceCap);
+  return { program, result, reason, assistanceEstimate };
+}
+
+function getMortgageProgramMatches(record) {
+  const order = { strong: 0, prepare: 1, verify: 2, outside: 3 };
+  return state.mortgagePrograms
+    .map((program) => matchMortgageProgram(record, program))
+    .sort((a, b) => order[a.result] - order[b.result]);
+}
+
+function mortgageMatchLabel(result) {
+  const labels = { strong: "Strong preliminary match", prepare: "Preparation needed", verify: "Location verification", outside: "Outside displayed range" };
+  return labels[result];
+}
+
+function renderMortgageMetrics() {
+  const records = state.buyerProfiles
+    .map((profile) => ({ profile, application: state.applications.find((application) => application.id === profile.applicationId) }))
+    .filter((record) => record.application);
+  const firstTime = records.filter((record) => record.profile.firstTimeBuyer).length;
+  const matchReady = records.filter((record) => getBuyerReadiness(record) === "match-ready").length;
+  const counseling = records.filter((record) => !record.profile.educationComplete).length;
+  const medianGapValues = records.map((record) => calculateBuyerCapacity(record).purchaseGap).sort((a, b) => a - b);
+  const medianGap = medianGapValues.length ? medianGapValues[Math.floor(medianGapValues.length / 2)] : 0;
+  document.getElementById("mortgage-metrics").innerHTML = `
+    <article class="metric-card"><span>Buyers in Pipeline</span><strong>${records.length}</strong><small>low-to-moderate-income profiles</small></article>
+    <article class="metric-card emphasis"><span>First-Time Buyers</span><strong>${firstTime}</strong><small>reported buyer status</small></article>
+    <article class="metric-card"><span>Assistance Match-Ready</span><strong>${matchReady}</strong><small>education, documents, and preapproval</small></article>
+    <article class="metric-card"><span>Median Purchase Gap</span><strong>${formatMoney(medianGap)}</strong><small>planning estimate at ${state.planningRate.toFixed(2)}%</small></article>
+  `;
+  document.getElementById("mortgage-count").textContent = records.length;
+  document.getElementById("buyer-list-summary").textContent = `${getBuyerRecords().length} of ${records.length} buyer profiles`;
+  return counseling;
+}
+
+function renderBuyerList() {
+  const records = getBuyerRecords();
+  if (records.length && !records.some((record) => record.application.id === state.selectedBuyerId)) {
+    state.selectedBuyerId = records[0].application.id;
+  }
+  document.getElementById("buyer-list").innerHTML = records.length ? records.map((record) => {
+    const readiness = getBuyerReadiness(record);
+    const capacity = calculateBuyerCapacity(record);
+    const selected = record.application.id === state.selectedBuyerId;
+    return `
+      <button class="buyer-row ${selected ? "selected" : ""}" type="button" data-buyer-id="${escapeHtml(record.application.id)}" aria-pressed="${selected}">
+        <span class="applicant-avatar">${escapeHtml(initials(record.application.applicant))}</span>
+        <span class="buyer-row-main"><strong>${escapeHtml(record.application.applicant)}</strong><small>${record.profile.amiPercent}% AMI · ${formatMoney(record.application.income)} income</small><span class="buyer-gap">${formatMoney(capacity.purchaseGap)} purchase gap</span></span>
+        <span class="badge buyer-${readiness}">${buyerReadinessLabel(readiness)}</span>
+      </button>
+    `;
+  }).join("") : `<div class="empty-state compact-empty"><h3>No buyers found</h3><p>Change the AMI or readiness filter.</p></div>`;
+}
+
+function renderReadinessItem(label, complete, detail) {
+  return `<div class="readiness-item"><span class="readiness-check ${complete ? "complete" : "pending"}">${complete ? "✓" : "!"}</span><div><strong>${label}</strong><small>${detail}</small></div><span>${complete ? "Complete" : "Next step"}</span></div>`;
+}
+
+function renderMortgageProgramCard(match) {
+  const { program } = match;
+  return `
+    <article class="mortgage-program-card ${match.result}">
+      <div class="mortgage-program-head"><div><p>${escapeHtml(program.agency)}</p><h3>${escapeHtml(program.name)}</h3></div><span class="badge mortgage-${match.result}">${mortgageMatchLabel(match.result)}</span></div>
+      <p class="program-assistance">${escapeHtml(program.assistance)}</p>
+      ${match.assistanceEstimate ? `<div class="assistance-estimate"><span>Potential assistance at target price</span><strong>Up to ${formatMoney(match.assistanceEstimate)}</strong></div>` : ""}
+      <p class="program-reason">${escapeHtml(match.reason)}</p>
+      <div class="program-tags">${program.requirements.map((requirement) => `<span>${escapeHtml(requirement)}</span>`).join("")}</div>
+      <div class="program-card-foot"><span>${escapeHtml(program.funding)}</span><a href="${escapeHtml(program.source)}" target="_blank" rel="noopener">Official requirements ↗</a></div>
+    </article>
+  `;
+}
+
+function renderMortgageDetail() {
+  const profile = state.buyerProfiles.find((item) => item.applicationId === state.selectedBuyerId);
+  const application = state.applications.find((item) => item.id === state.selectedBuyerId);
+  const detail = document.getElementById("mortgage-buyer-detail");
+  if (!profile || !application) {
+    detail.innerHTML = `<div class="empty-state"><h3>Select a buyer profile</h3><p>Affordability planning and program matches will appear here.</p></div>`;
+    return;
+  }
+  const record = { profile, application };
+  const capacity = calculateBuyerCapacity(record);
+  const readiness = getBuyerReadiness(record);
+  const programMatches = getMortgageProgramMatches(record);
+  const nextAction = !application.documents?.income
+    ? { title: "Verify household income", detail: "Program and lender comparisons require current income evidence.", action: "Request income documents" }
+    : !profile.educationComplete
+      ? { title: "Enroll in homebuyer education", detail: "Local and CalHFA assistance programs commonly require education or counseling.", action: "Start counseling referral" }
+      : profile.preapproval !== "complete"
+        ? { title: "Complete participating-lender preapproval", detail: "Confirm the first-mortgage amount before relying on assistance estimates.", action: "Request preapproval" }
+        : { title: "Verify target property jurisdiction", detail: "Confirm the exact address, purchase price, property type, and available program funding.", action: "Review program checklist" };
+  const bridgePercent = Math.round(clamp(capacity.estimatedPriceCapacity / profile.targetPrice * 100, 0, 100));
+
+  detail.innerHTML = `
+    <div class="mortgage-buyer-head">
+      <div><p class="eyebrow">SELECTED BUYER</p><h2>${escapeHtml(application.applicant)}</h2><p>${escapeHtml(application.id)} · ${householdSize(application)}-person household · ${profile.amiPercent}% AMI</p></div>
+      <div class="buyer-head-badges"><span class="badge buyer-${readiness}">${buyerReadinessLabel(readiness)}</span><span class="badge first-buyer">${profile.firstTimeBuyer ? "First-time buyer" : "Repeat buyer"}</span></div>
+    </div>
+
+    <section class="mortgage-next-action">
+      <div><p class="eyebrow">NEXT RECOMMENDED ACTION</p><h3>${escapeHtml(nextAction.title)}</h3><p>${escapeHtml(nextAction.detail)}</p></div>
+      <button class="primary-button" type="button" data-mortgage-action>${escapeHtml(nextAction.action)}</button>
+    </section>
+
+    <div class="mortgage-detail-grid">
+      <section class="mortgage-card affordability-bridge">
+        <div class="mortgage-card-head"><div><p class="eyebrow">AFFORDABILITY BRIDGE</p><h3>What assistance needs to solve</h3></div><label>Planning rate <span><input id="planning-rate" type="number" min="1" max="15" step="0.125" value="${state.planningRate}">%</span></label></div>
+        <div class="bridge-amounts">
+          <div><span>Target home price</span><strong>${formatMoney(profile.targetPrice)}</strong></div>
+          <div><span>Planning price capacity</span><strong>${formatMoney(capacity.estimatedPriceCapacity)}</strong></div>
+          <div class="bridge-gap"><span>Estimated purchase gap</span><strong>${formatMoney(capacity.purchaseGap)}</strong></div>
+          <div><span>Estimated upfront cash gap</span><strong>${formatMoney(capacity.upfrontCashGap)}</strong></div>
+        </div>
+        <div class="bridge-bar" aria-label="Planning capacity covers ${bridgePercent}% of target price"><i style="width:${bridgePercent}%"></i></div>
+        <div class="bridge-caption"><span>${bridgePercent}% planning capacity</span><span>${100 - bridgePercent}% bridge needed</span></div>
+        <p class="calculation-note">Staff planning estimate only: uses 30% of gross income as a housing budget, reserves 28% for taxes, insurance, and association costs, assumes a 30-year term, and adds recorded savings. It is not a lender quote or preapproval.</p>
+      </section>
+
+      <section class="mortgage-card buyer-financial-card">
+        <p class="eyebrow">BUYER SNAPSHOT</p><h3>Income is viable; market access is the gap</h3>
+        <div class="buyer-financial-grid">
+          <div><span>Annual income</span><strong>${formatMoney(application.income)}</strong></div><div><span>AMI band</span><strong>${profile.amiPercent}%</strong></div><div><span>Available savings</span><strong>${formatMoney(profile.savings)}</strong></div><div><span>Monthly debt</span><strong>${formatMoney(profile.monthlyDebt)}</strong></div><div><span>Credit band</span><strong>${escapeHtml(profile.creditBand)}</strong></div><div><span>Employment history</span><strong>${profile.employmentYears} years</strong></div>
+        </div>
+        <p class="calculation-note">Credit band is used only to guide counseling and lender referral. The dashboard does not make a credit or underwriting decision.</p>
+      </section>
+    </div>
+
+    <section class="mortgage-card readiness-card">
+      <div class="section-heading-row"><div><p class="eyebrow">READINESS CHECKLIST</p><h3>Before program or lender submission</h3></div><span>${[profile.firstTimeBuyer, application.documents?.income, profile.educationComplete, profile.preapproval === "complete"].filter(Boolean).length}/4 core steps</span></div>
+      <div class="readiness-list">
+        ${renderReadinessItem("First-time buyer status", profile.firstTimeBuyer, profile.firstTimeBuyer ? "Reported no home ownership in the prior three-year period; verify program definition." : "Review program exceptions and ownership history.")}
+        ${renderReadinessItem("Income evidence", Boolean(application.documents?.income), application.documents?.income ? "Current income evidence is recorded." : "Request current income verification.")}
+        ${renderReadinessItem("Homebuyer education", profile.educationComplete, profile.educationComplete ? "Completion recorded." : "Refer to an approved education or counseling provider.")}
+        ${renderReadinessItem("Participating-lender preapproval", profile.preapproval === "complete", profile.preapproval === "complete" ? "Preapproval recorded; confirm expiration and terms." : profile.preapproval === "in-progress" ? "Preapproval is in progress." : "Preapproval has not started.")}
+      </div>
+    </section>
+
+    <section class="mortgage-program-section">
+      <div class="section-heading-row"><div><p class="eyebrow">PROGRAM MATCHES</p><h2>Government-backed mortgage and purchase assistance</h2><p>Ordered by preliminary fit. Staff must verify current funding and official guidelines.</p></div><span>${programMatches.filter((match) => match.result !== "outside").length} possible</span></div>
+      <div class="mortgage-program-grid">${programMatches.map(renderMortgageProgramCard).join("")}</div>
+    </section>
+  `;
+}
+
+function renderMortgageWorkspace() {
+  renderMortgageMetrics();
+  renderBuyerList();
+  renderMortgageDetail();
 }
 
 function loadStoredState(applications) {
@@ -567,10 +819,11 @@ function switchView(viewName) {
     if (active) item.setAttribute("aria-current", "page");
     else item.removeAttribute("aria-current");
   });
-  const labels = { applications: "Housing Matching & Applications", map: "Site planning map", overview: "Program overview", outreach: "Outreach" };
+  const labels = { applications: "Housing Matching & Applications", mortgage: "Mortgage matching", map: "Site planning map", overview: "Program overview", outreach: "Outreach" };
   document.getElementById("breadcrumb-current").textContent = labels[viewName];
   document.querySelector(".sidebar").classList.remove("open");
   document.querySelector(".mobile-menu").setAttribute("aria-expanded", "false");
+  if (viewName === "mortgage") renderMortgageWorkspace();
   if (viewName === "map") initializeMap();
 }
 
@@ -684,6 +937,34 @@ function bindEvents() {
     event.currentTarget.setAttribute("aria-expanded", String(open));
   });
 
+  document.getElementById("buyer-search").addEventListener("input", (event) => {
+    state.buyerSearch = event.target.value;
+    renderMortgageWorkspace();
+  });
+  document.getElementById("buyer-ami-filter").addEventListener("change", (event) => {
+    state.buyerAmiFilter = event.target.value;
+    renderMortgageWorkspace();
+  });
+  document.getElementById("buyer-readiness-filter").addEventListener("change", (event) => {
+    state.buyerReadinessFilter = event.target.value;
+    renderMortgageWorkspace();
+  });
+  document.getElementById("buyer-list").addEventListener("click", (event) => {
+    const buyer = event.target.closest("[data-buyer-id]");
+    if (!buyer) return;
+    state.selectedBuyerId = buyer.dataset.buyerId;
+    renderMortgageWorkspace();
+  });
+  document.getElementById("mortgage-buyer-detail").addEventListener("change", (event) => {
+    if (event.target.id !== "planning-rate") return;
+    state.planningRate = clamp(Number(event.target.value) || 6.5, 1, 15);
+    renderMortgageWorkspace();
+  });
+  document.getElementById("mortgage-buyer-detail").addEventListener("click", (event) => {
+    if (!event.target.closest("[data-mortgage-action]")) return;
+    showToast("Recommended mortgage-matching task opened for staff follow-up.");
+  });
+
   document.getElementById("application-search").addEventListener("input", (event) => { state.search = event.target.value; renderApplications(); });
   document.getElementById("sort-applications").addEventListener("change", (event) => { state.sort = event.target.value; renderApplications(); });
   ["priority", "size", "stage", "bedroom", "documents", "match"].forEach((filter) => {
@@ -768,12 +1049,20 @@ function bindEvents() {
 async function initialize() {
   bindEvents();
   try {
-    const [applicationsResponse, propertiesResponse] = await Promise.all([fetch("data/applications.json"), fetch("data/properties.json")]);
-    if (!applicationsResponse.ok || !propertiesResponse.ok) throw new Error("One or more data files could not be loaded");
+    const [applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse] = await Promise.all([
+      fetch("data/applications.json"),
+      fetch("data/properties.json"),
+      fetch("data/buyer_profiles.json"),
+      fetch("data/mortgage_programs.json"),
+    ]);
+    if (![applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse].every((response) => response.ok)) throw new Error("One or more data files could not be loaded");
     state.properties = await propertiesResponse.json();
+    state.buyerProfiles = await buyerProfilesResponse.json();
+    state.mortgagePrograms = await mortgageProgramsResponse.json();
     state.applications = loadStoredState(await applicationsResponse.json());
     state.selectedId = state.applications.find((application) => application.id === "HA-260211")?.id || getFilteredApplications()[0]?.id || null;
     renderApplications();
+    renderMortgageWorkspace();
   } catch (error) {
     document.getElementById("queue-summary").textContent = "Application data could not be loaded.";
     document.getElementById("application-rows").innerHTML = `<tr><td colspan="7">Serve this folder over HTTP to load the demonstration data (${escapeHtml(error.message)}).</td></tr>`;
