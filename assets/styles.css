@@ -577,6 +577,25 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
 .map-group-row strong { color: var(--navy-950); font-size: 9px; }
 .data-footnote { max-width: 920px; margin: 12px 2px 0; color: var(--muted); font-size: 10px; }
 
+#insights-top-area { font-size: 18px; line-height: 1.25; letter-spacing: -0.02em; }
+.insight-panel { margin-bottom: 14px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); padding: 18px; box-shadow: 0 2px 6px rgba(24, 47, 66, 0.04); }
+.insight-panel:last-of-type { margin-bottom: 0; }
+.insight-panel-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 24px; margin-bottom: 14px; }
+.insight-panel-head h2 { margin-bottom: 4px; font-size: 17px; }
+.insight-panel-head p { max-width: 660px; margin-bottom: 0; color: var(--muted); font-size: 11px; }
+.insight-legend { display: grid; gap: 5px; }
+.insight-legend span { display: flex; align-items: center; gap: 6px; color: var(--slate); font-size: 10px; font-weight: 700; white-space: nowrap; }
+.insight-dot { width: 9px; height: 9px; flex: 0 0 9px; border-radius: 50%; }
+.insight-dot.moved-up { background: var(--orange-600); }
+.insight-dot.moved-down { background: #b4c1c9; }
+.insight-dot.age-young { border-radius: 2px; background: var(--teal-600); }
+.insight-dot.age-senior { border-radius: 2px; background: var(--orange-600); }
+.insight-chart { position: relative; width: 100%; height: 390px; }
+.insight-chart.tall { height: 440px; }
+.insight-note { min-height: 16px; margin: 8px 0 0; color: var(--muted); font-size: 11px; }
+.insight-note.error { color: var(--red-700); }
+.insight-caption { max-width: 760px; margin: 6px 0 0; color: var(--slate); font-size: 11px; }
+
 .mortgage-page-heading { align-items: flex-start; }
 .mortgage-notice a { flex: 0 0 auto; color: var(--teal-700); font-size: 11px; font-weight: 800; text-decoration: none; }
 .mortgage-notice a:hover { text-decoration: underline; }
@@ -907,6 +926,8 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
   .case-scroll { max-height: none; }
   .map-workspace { grid-template-columns: 1fr; }
   .map-detail { border-top: 1px solid var(--line); border-left: 0; }
+  .insight-panel-head { align-items: flex-start; flex-direction: column; gap: 12px; }
+  .insight-legend { grid-auto-flow: column; gap: 14px; }
   .mortgage-workspace { grid-template-columns: 1fr; }
   .buyer-list-panel { border-right: 0; border-bottom: 1px solid var(--line); }
   .buyer-filters { grid-template-columns: 1fr 1fr; }
@@ -936,6 +957,10 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
   .metric-grid { grid-template-columns: 1fr 1fr; gap: 9px; }
   .metric-card { min-height: 104px; padding: 13px; }
   .metric-card strong { font-size: 23px; }
+  #insights-top-area { font-size: 16px; }
+  .insight-panel { padding: 14px; }
+  .insight-legend { grid-auto-flow: row; gap: 5px; }
+  .insight-chart, .insight-chart.tall { height: 330px; }
   .queue-header { align-items: stretch; flex-direction: column; }
   .queue-actions { width: 100%; }
   .search-field { min-width: 0; width: 100%; }

@@ -6,8 +6,26 @@ review applicant information, compare potential properties, resolve missing docu
 applications through placement. It is built with plain HTML, CSS, and JavaScript and has no build
 step.
 
+The prototype pairs two halves of the same problem. The analysis views read the San Diego HLB
+Hackathon 2024 dataset to ask *where* households are being priced out and *which* areas fit a
+low-to-middle-income ownership program. The operations views then take a single household through
+review, matching, and placement.
+
 All applicant records included in the repository are fictional demonstration records. The HLB
-source records used for the map are synthetic households, not identifiable people.
+source records used for the map and the analysis charts are synthetic households, not identifiable
+people.
+
+## What it shows
+
+- **Applications** — a case-management queue for reviewing applicants and comparing properties.
+- **Mortgage matching** — purchase-assistance planning for first-time buyers in the program band.
+- **Outreach** — an anonymous campaign-planning audience built from the modeled population.
+- **Site planning map** — a choropleth of San Diego County by PUMA (Public Use Microdata Area),
+  colored by economic vulnerability: households whose income falls below the basic-needs budget
+  required to live in that area. Hover any area for its rate, household counts, median income,
+  median required income, and median annual income gap.
+- **Area insights** — two charts that re-read the same county for the low-to-middle-income
+  audience: a rank-shift scatter and the real Census age composition of the leading area.
 
 ## Application management
 
@@ -117,24 +135,50 @@ Hovering or clicking an area updates the detail panel with the area's housing fi
 six-group breakdown. The generated outreach data stores each PUMA's group counts so the map sidebar
 and outreach table stay aligned.
 
+## Area insights
+
+The map ranks planning areas by overall economic vulnerability. The Area insights view asks a
+different question — which areas suit a *low-to-middle-income* ownership program — using two
+charts drawn from the same county data:
+
+- **Vulnerability rank compared with low-to-middle income rank**
+  (`data/low_mid_income_priority.json`). Areas are re-ranked by their share of "near-miss"
+  households (80–100% of required income) instead of by raw vulnerability rate, because near-miss
+  households are less likely to already be served by existing low-income assistance. Chula Vista
+  (West) & National City — the top area by raw vulnerability — ranks **last (#22)** under this
+  lens, because its vulnerable households are mostly deep-need rather than near-miss. Rancho
+  Bernardo & Poway ranks #1 instead, at a 28.3% near-miss share.
+- **Age composition of the leading area** (`data/tract_age_demographics.json`). Real Census ACS
+  5-Year age data (table S0101) for the tracts inside that leading area, because the synthetic HLB
+  dataset carries no real age breakdown. It informs the outreach channel — mail-leaning where the
+  population skews older, digital-leaning where it skews younger.
+
+Both charts are planning context for campaign design. Neither one determines program eligibility,
+and the Census percentages carry their own published margins of error.
+
 ## Project structure
 
 ```
 .
 ├── index.html                 # accessible application shell and views
 ├── assets/
-│   ├── app.js                 # case workflow, mortgage matching, priority support, and map behavior
+│   ├── app.js                 # case workflow, mortgage matching, priority support, map, and charts
 │   └── styles.css             # responsive dashboard design
 ├── data/
 │   ├── applications.json      # fictional application records for the prototype
 │   ├── buyer_profiles.json     # fictional buyer-readiness and purchase-planning inputs
+│   ├── low_mid_income_priority.json # PUMAs ranked by low-to-middle income (near-miss) priority
 │   ├── mortgage_programs.json  # published program features and official source links
 │   ├── outreach_households.json # modeled counts and representative synthetic outreach rows
 │   ├── properties.json        # fictional properties and published matching criteria
-│   └── puma_stats.json        # small (22-row) precomputed PUMA-level summary
+│   ├── puma_stats.json        # small (22-row) precomputed PUMA-level summary
+│   └── tract_age_demographics.json # real Census age data for the leading area's tracts
 ├── scripts/
 │   ├── build_data.py          # regenerates data/puma_stats.json from the raw CSV
-│   └── build_outreach_data.py # regenerates the compact outreach-planning dataset
+│   ├── build_outreach_data.py # regenerates the compact outreach-planning dataset
+│   ├── build_tract_affordability.py # regenerates census-tract-level affordability stats
+│   ├── fetch_age_demographics.py # regenerates data/tract_age_demographics.json (needs a Census API key)
+│   └── rank_low_mid_income.py # regenerates data/low_mid_income_priority.json
 └── README.md
 ```
 
@@ -173,6 +217,25 @@ To regenerate the outreach audience from the same source CSV:
 python scripts/build_outreach_data.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
 ```
 
+To regenerate the low-to-middle income ranking behind the Area insights scatter chart:
+
+```bash
+python scripts/rank_low_mid_income.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
+```
+
+This overwrites `data/low_mid_income_priority.json`.
+
+To regenerate the tract age data behind the second Area insights chart:
+
+```bash
+python scripts/fetch_age_demographics.py --api-key YOUR_CENSUS_API_KEY
+```
+
+This requires a free [Census API key](https://api.census.gov/data/key_signup.html) and
+`tract_level_affordability.csv` (regenerate it with `scripts/build_tract_affordability.py` if it is
+missing). It overwrites `data/tract_age_demographics.json`. Add `--puma 07330` to target a
+different PUMA instead of the default, Rancho Bernardo & Poway.
+
 
 ## Data notes / caveats
 
@@ -190,6 +253,7 @@ python scripts/build_outreach_data.py /path/to/san_diego_ca_hlb_hackathon_2024_2
 
 ## Tech
 
-Plain HTML/CSS/JS + [Plotly.js](https://plotly.com/javascript/) (loaded from CDN) for the map —
-no build step, no npm install, no framework. `scripts/build_data.py` is the only place pandas is
-used, and it only runs when you regenerate the data.
+Plain HTML/CSS/JS + [Plotly.js](https://plotly.com/javascript/) for the map and
+[Chart.js](https://www.chartjs.org/) for the Area insights charts, both loaded from a CDN — no
+build step, no npm install, no framework. The `scripts/` folder is the only place pandas is used,
+and it only runs when you regenerate the data.

@@ -39,6 +39,7 @@ const state = {
   outreachCampaignGroups: [],
   mapLoaded: false,
   mapMode: "vulnerable-count",
+  insightsLoaded: false,
   mapContext: null,
   selectedMapPuma: null,
   toastTimer: null,
@@ -1144,13 +1145,14 @@ function switchView(viewName) {
     if (active) item.setAttribute("aria-current", "page");
     else item.removeAttribute("aria-current");
   });
-  const labels = { applications: "Housing Matching & Applications", mortgage: "Mortgage matching", map: "Site planning map", overview: "Program overview", outreach: "Outreach" };
+  const labels = { applications: "Housing Matching & Applications", mortgage: "Mortgage matching", map: "Site planning map", insights: "Area insights", overview: "Program overview", outreach: "Outreach" };
   document.getElementById("breadcrumb-current").textContent = labels[viewName];
   document.querySelector(".sidebar").classList.remove("open");
   document.querySelector(".mobile-menu").setAttribute("aria-expanded", "false");
   if (viewName === "mortgage") renderMortgageWorkspace();
   if (viewName === "outreach") renderOutreachWorkspace();
   if (viewName === "map") initializeMap();
+  if (viewName === "insights") initializeAreaInsights();
 }
 
 function updateIntakePreview() {
@@ -1244,6 +1246,151 @@ async function initializeMap() {
     statusElement.textContent = `${error.message}. Serve this folder over HTTP and check the network connection used for Census boundaries.`;
     statusElement.className = "error";
   }
+}
+
+const insightColors = {
+  movedUp: "#c65f2d",
+  movedDown: "#b4c1c9",
+  reference: "#c8d2d8",
+  ageYoung: "#14837a",
+  ageSenior: "#c65f2d",
+};
+
+const insightTractLimit = 15;
+
+async function initializeAreaInsights() {
+  if (state.insightsLoaded) return;
+  state.insightsLoaded = true;
+  const shiftStatus = document.getElementById("shift-chart-status");
+  const ageStatus = document.getElementById("age-chart-status");
+  shiftStatus.textContent = "Loading area ranking data…";
+  ageStatus.textContent = "Loading tract age data…";
+
+  try {
+    if (!window.Chart) throw new Error("The chart library did not load");
+    window.Chart.defaults.font.family = '"DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif';
+    window.Chart.defaults.font.size = 11;
+    window.Chart.defaults.color = "#71808c";
+
+    const [priorityResponse, ageResponse] = await Promise.all([
+      fetch("data/low_mid_income_priority.json"),
+      fetch("data/tract_age_demographics.json"),
+    ]);
+    if (!priorityResponse.ok) throw new Error(`Area ranking data returned HTTP ${priorityResponse.status}`);
+    if (!ageResponse.ok) throw new Error(`Tract age data returned HTTP ${ageResponse.status}`);
+    const priorityData = await priorityResponse.json();
+    const ageRows = await ageResponse.json();
+
+    renderInsightMetrics(priorityData.pumas, ageRows);
+    renderRankShiftChart(priorityData.pumas);
+    renderTractAgeChart(ageRows);
+    shiftStatus.textContent = "";
+    ageStatus.textContent = "";
+  } catch (error) {
+    state.insightsLoaded = false;
+    const message = `${error.message}. Serve this folder over HTTP so the dashboard can read the data files.`;
+    shiftStatus.textContent = message;
+    shiftStatus.classList.add("error");
+    ageStatus.textContent = message;
+    ageStatus.classList.add("error");
+  }
+}
+
+function renderInsightMetrics(pumas, ageRows) {
+  const leader = pumas.reduce((best, puma) => (puma.low_mid_priority_rank < best.low_mid_priority_rank ? puma : best));
+  const biggestShift = pumas.reduce((best, puma) => (puma.rank_shift > best.rank_shift ? puma : best));
+  document.getElementById("insights-top-area").textContent = leader.puma_name;
+  document.getElementById("insights-top-nearmiss").textContent = `${leader.pct_near_miss_of_vulnerable.toFixed(1)}%`;
+  document.getElementById("insights-top-shift").textContent = `+${formatNumber(biggestShift.rank_shift)}`;
+  document.getElementById("insights-top-shift-note").textContent = `places gained by ${biggestShift.puma_name}`;
+  document.getElementById("insights-tract-count").textContent = formatNumber(Math.min(ageRows.length, insightTractLimit));
+  document.getElementById("shift-chart-caption").textContent = `${leader.puma_name} has the highest share of near-miss households of any planning area, `
+    + `which makes it the leading candidate for a low-to-middle-income ownership campaign even though it ranks `
+    + `${leader.vulnerability_rank} of ${pumas.length} on overall vulnerability.`;
+}
+
+function renderRankShiftChart(pumas) {
+  const maxRank = pumas.length;
+  const points = pumas.map((puma) => ({ x: puma.vulnerability_rank, y: puma.low_mid_priority_rank, name: puma.puma_name }));
+  const colors = pumas.map((puma) => (puma.low_mid_priority_rank < puma.vulnerability_rank ? insightColors.movedUp : insightColors.movedDown));
+  const radii = pumas.map((puma) => (puma.low_mid_priority_rank === 1 || puma.vulnerability_rank === 1 ? 9 : 5));
+
+  new window.Chart(document.getElementById("shift-chart"), {
+    type: "scatter",
+    data: {
+      datasets: [
+        {
+          label: "No change",
+          type: "line",
+          data: [{ x: 1, y: 1 }, { x: maxRank, y: maxRank }],
+          borderColor: insightColors.reference,
+          borderDash: [4, 4],
+          borderWidth: 1,
+          pointRadius: 0,
+          order: 1,
+        },
+        { label: "Planning areas", data: points, backgroundColor: colors, pointRadius: radii, order: 0 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (item) => {
+              if (item.dataset.label === "No change") return "";
+              const point = item.raw;
+              return [point.name, `Vulnerability rank ${point.x} of ${maxRank}`, `Low-to-middle income rank ${point.y} of ${maxRank}`];
+            },
+          },
+        },
+      },
+      scales: {
+        x: { title: { display: true, text: "Vulnerability rank (1 = most vulnerable overall)" }, min: 0, max: maxRank + 1 },
+        y: { title: { display: true, text: "Low-to-middle income rank (1 = strongest fit)" }, min: 0, max: maxRank + 1 },
+      },
+    },
+  });
+}
+
+function renderTractAgeChart(ageRows) {
+  const rows = [...ageRows].sort((first, second) => first.priority_rank - second.priority_rank).slice(0, insightTractLimit);
+
+  new window.Chart(document.getElementById("age-chart"), {
+    type: "bar",
+    data: {
+      labels: rows.map((row, index) => `Tract ${index + 1}`),
+      datasets: [
+        { label: "18–24 years", data: rows.map((row) => row.pct_age_18_24), backgroundColor: insightColors.ageYoung, borderRadius: 3 },
+        { label: "65+ years", data: rows.map((row) => row.pct_age_65_plus), backgroundColor: insightColors.ageSenior, borderRadius: 3 },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            afterBody: (items) => {
+              const row = rows[items[0].dataIndex];
+              return [
+                `Countywide priority rank ${formatNumber(row.priority_rank)}`,
+                `${row.vulnerability_rate}% of households here are economically vulnerable`,
+                `${formatNumber(row.n_vulnerable)} vulnerable households in this tract`,
+                `Suggested channel: ${row.outreach_lean}`,
+              ];
+            },
+          },
+        },
+      },
+      scales: {
+        y: { ticks: { callback: (value) => `${value}%` }, title: { display: true, text: "Share of tract population" } },
+      },
+    },
+  });
 }
 
 function getOutreachArea(code) {

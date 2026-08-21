@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/styles.css">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
   <script src="assets/app.js" defer></script>
 </head>
 <body>
@@ -48,6 +49,10 @@
         <button class="nav-item" type="button" data-view="map">
           <span class="nav-icon" aria-hidden="true">◇</span>
           <span>Site planning map</span>
+        </button>
+        <button class="nav-item" type="button" data-view="insights">
+          <span class="nav-icon" aria-hidden="true">◔</span>
+          <span>Area insights</span>
         </button>
       </nav>
 
@@ -301,6 +306,57 @@
           </aside>
         </div>
         <p class="data-footnote">Household Living Budget synthetic dataset, 2024. Records represent modeled households, not identifiable people. Map color shows vulnerable household count or rate; the area sidebar adds the local mix of the six market-first outreach groups and does not imply program eligibility. PUMA boundaries are fetched from U.S. Census Bureau TIGERweb.</p>
+      </section>
+
+      <section class="view" id="insights-view" data-view-panel="insights">
+        <div class="page-heading compact-heading">
+          <div>
+            <p class="eyebrow">AREA INSIGHTS</p>
+            <h1>Which areas change when the focus is low-to-middle income?</h1>
+            <p>The site planning map ranks areas by overall economic vulnerability. These two views re-read the same county for the ownership program's low-to-middle-income audience, then look at who actually lives in the leading area.</p>
+          </div>
+        </div>
+
+        <div class="metric-grid" id="insights-metrics">
+          <article class="metric-card emphasis"><span>Leading low-to-middle income area</span><strong id="insights-top-area">—</strong><small>highest near-miss share countywide</small></article>
+          <article class="metric-card"><span>Near-miss share</span><strong id="insights-top-nearmiss">—</strong><small>of that area's vulnerable households</small></article>
+          <article class="metric-card"><span>Largest ranking change</span><strong id="insights-top-shift">—</strong><small id="insights-top-shift-note">places moved under this lens</small></article>
+          <article class="metric-card"><span>Priority tracts charted</span><strong id="insights-tract-count">—</strong><small>Census tracts with published age data</small></article>
+        </div>
+
+        <section class="insight-panel" aria-labelledby="shift-chart-title">
+          <div class="insight-panel-head">
+            <div>
+              <h2 id="shift-chart-title">Vulnerability rank compared with low-to-middle income rank</h2>
+              <p>Each point is one of San Diego County's 22 planning areas. Points below the dashed line move up in priority when areas are ranked by near-miss share instead of overall vulnerability.</p>
+            </div>
+            <div class="insight-legend">
+              <span><i class="insight-dot moved-up" aria-hidden="true"></i>Moved up under low-to-middle income focus</span>
+              <span><i class="insight-dot moved-down" aria-hidden="true"></i>Moved down</span>
+            </div>
+          </div>
+          <div class="insight-chart tall"><canvas id="shift-chart" role="img" aria-label="Scatter plot comparing each planning area's overall vulnerability rank with its low-to-middle-income priority rank."></canvas></div>
+          <p class="insight-note" id="shift-chart-status">Open this view to load the area ranking data…</p>
+          <p class="insight-caption" id="shift-chart-caption"></p>
+        </section>
+
+        <section class="insight-panel" aria-labelledby="age-chart-title">
+          <div class="insight-panel-head">
+            <div>
+              <h2 id="age-chart-title">Who the leading area reaches, by age</h2>
+              <p>Published Census age data (American Community Survey 5-Year, table S0101) for the tracts inside the leading low-to-middle income area, ordered most to least urgent by overall vulnerability priority. A tract is a neighborhood-sized area of a few thousand people; hover a bar for its countywide rank.</p>
+            </div>
+            <div class="insight-legend">
+              <span><i class="insight-dot age-young" aria-hidden="true"></i>18–24 years</span>
+              <span><i class="insight-dot age-senior" aria-hidden="true"></i>65+ years</span>
+            </div>
+          </div>
+          <div class="insight-chart"><canvas id="age-chart" role="img" aria-label="Grouped bar chart of age composition across the priority tracts of the leading low-to-middle-income planning area."></canvas></div>
+          <p class="insight-note" id="age-chart-status">Open this view to load the tract age data…</p>
+          <p class="insight-caption">Age composition informs the outreach channel — mail-leaning where the population skews older, digital-leaning where it skews younger. It is planning context for campaign design, not an eligibility rule or a statement about any household.</p>
+        </section>
+
+        <p class="data-footnote">Ranking figures come from the Household Living Budget synthetic dataset (2024); every record is a modeled household, not an identifiable person. Near-miss means a modeled income between 80% and 100% of the required amount. Age percentages are published U.S. Census Bureau estimates for real tracts and carry their own margins of error. Neither chart determines program eligibility.</p>
       </section>
 
       <section class="view" id="overview-view" data-view-panel="overview">
