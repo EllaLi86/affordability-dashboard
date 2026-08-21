@@ -14,9 +14,9 @@ Usage:
     python3 rank_low_mid_income.py path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
 
 Outputs:
-    low_mid_income_priority.csv  -- one row per PUMA, ranked
-    low_mid_income_priority.json -- same data as JSON, same field names/shape
-                                     as data/puma_stats.json for easy merging
+    low_mid_income_priority.json -- one row per PUMA, ranked. Same field
+                                     names/shape as data/puma_stats.json for
+                                     easy merging.
 """
 
 import sys
@@ -49,7 +49,7 @@ PUMA_NAMES = {
 }
 
 
-def rank(csv_path: str, out_csv_path: str, out_json_path: str) -> None:
+def rank(csv_path: str, out_json_path: str) -> None:
     df = pd.read_csv(csv_path, dtype={'geoid': str, 'puma': str})
 
     # same reliability filter as build_data.py -- drop tracts with < 100 sampled households
@@ -84,8 +84,6 @@ def rank(csv_path: str, out_csv_path: str, out_json_path: str) -> None:
            'low_mid_priority_rank', 'rank_shift']]
     g = g.sort_values('low_mid_priority_rank')
 
-    g.to_csv(out_csv_path, index=False)
-
     county_summary = {
         'county_vulnerability_rate': round(df['economically_vulnerable'].mean() * 100, 1),
         'total_households': int(len(df)),
@@ -95,7 +93,7 @@ def rank(csv_path: str, out_csv_path: str, out_json_path: str) -> None:
     with open(out_json_path, 'w') as f:
         json.dump(out, f, indent=2)
 
-    print(f"Wrote {out_csv_path} and {out_json_path} ({len(g)} PUMAs)\n")
+    print(f"Wrote {out_json_path} ({len(g)} PUMAs)\n")
     print("Ranked by low-mid income priority (near-miss share):")
     print(g[['puma_name', 'low_mid_priority_rank', 'vulnerability_rank',
               'rank_shift', 'pct_near_miss_of_vulnerable']].to_string(index=False))
@@ -105,4 +103,4 @@ if __name__ == '__main__':
     if len(sys.argv) != 2:
         print(__doc__)
         sys.exit(1)
-    rank(sys.argv[1], 'low_mid_income_priority.csv', 'low_mid_income_priority.json')
+    rank(sys.argv[1], 'data/low_mid_income_priority.json')
