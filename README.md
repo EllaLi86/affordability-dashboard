@@ -58,12 +58,6 @@ python scripts/build_data.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.c
 
 This overwrites `data/puma_stats.json`. Commit the updated file — nothing else needs to change.
 
-## Deploying so your teammate can just open a link (GitHub Pages)
-
-1. Push this repo to GitHub (see below).
-2. On GitHub: **Settings → Pages → Source → Deploy from a branch → `main` / `(root)` → Save**.
-3. GitHub gives you a URL like `https://<your-username>.github.io/<repo-name>/` within a minute
-   or two — share that link directly, no local setup needed on your teammate's end.
 
 ## Data notes / caveats
 
