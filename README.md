@@ -1,45 +1,48 @@
 # San Diego County Housing Access dashboard
 
-An operations prototype for a government affordable-homeownership program. The dashboard now
-includes an application review queue and the original interactive San Diego County affordability
-map. It is built with plain HTML, CSS, and JavaScript and has no build step.
+An operations prototype for a government affordable-housing matching program. The dashboard
+supports the full `TARGET → MATCH → APPLY → TRACK` journey: identify high-need communities,
+review applicant information, compare potential properties, resolve missing documents, and track
+applications through placement. It is built with plain HTML, CSS, and JavaScript and has no build
+step.
 
 All applicant records included in the repository are fictional demonstration records. The HLB
 source records used for the map are synthetic households, not identifiable people.
 
 ## Application management
 
-The default view gives program staff a working application queue with:
+The default view gives program staff a high-volume case-management queue with:
 
-- Search, status, household-size, and eligibility-result filters.
-- A complete household panel with reviewer-controlled document verification.
-- Reviewer notes and workflow actions for `New`, `In review`, `Needs info`, and `Eligible`.
+- Search plus priority, household-size, workflow-stage, bedroom, document, and match filters.
+- Plain-language income, Household Living Budget, and annual affordability-gap context.
+- A complete applicant panel with next actions and reviewer-controlled document verification.
+- Potential property matches with explainable income, occupancy, bedroom, location, and evidence checks.
+- Workflow stages from `New` and `Ready to match` through property submission, waitlist, and `Housed`.
 - A manual-intake form for paper, phone, or partner-assisted applications.
 - Device-local persistence for demo status changes, notes, and newly added records.
 - Keyboard-accessible queue rows, responsive layouts, and clear data-use warnings.
 
-### Explainable eligibility pre-screen
+### Priority and property eligibility are separate
 
-The dashboard uses independent, visible checks instead of an urgency score or opaque ranking:
+Priority helps staff decide which case to review first. It uses financial gap, housing instability,
+household needs, and time waiting, but displays a plain-language category rather than a prominent
+number. Priority never decides who receives housing.
 
-| Draft rule | What it checks |
+Potential property matches compare applicant information with each property's published criteria:
+
+| Matching factor | What it checks |
 |---|---|
-| Income fit | Reported income is below the modeled household living budget |
-| County residency | Accepted San Diego County residency evidence is verified |
-| Property ownership | The household does not already own a suitable residential property |
-| Primary residence | The purchased home will be the household's primary residence |
-| Household and unit fit | Household size fits the family-sized homes currently planned |
-| Purchase readiness | A financing, assistance, or homebuyer-counseling pathway is confirmed |
-| Evidence complete | Identity, income, residency, ownership, and purchase-readiness evidence is verified |
+| Income | Reported income is compared with the property's published income limit |
+| Occupancy | Household size fits the property's minimum and maximum occupancy rules |
+| Bedroom need | The unit has enough bedrooms for the household's stated need |
+| Location | The property is compared with the applicant's preferred area |
+| Evidence | Missing income or application documents remain visible to staff |
+| Availability | The property shows whether applications or its waitlist are open |
 
-The result is `Likely eligible`, `Needs verification`, or `Policy review`. The prototype never
-automatically approves or denies. A reviewer must verify every required document and save an
-eligibility note before marking a household eligible. Name, preferred language, race, gender,
-disability, and other protected characteristics are not used.
-
-The HLB comparison is a prototype screening rule, not an adopted legal income standard. A real
-program must replace it with criteria approved by housing counsel, such as the program's adopted
-AMI limits, ownership exceptions, occupancy rules, and resale restrictions.
+Results use cautious labels such as `Potential match`, `Likely eligible`, `Verification required`,
+and `Not suitable`, always with a reason. These are staff decision aids—not approvals, denials, or
+final eligibility findings. HLB remains context for affordability need and does not replace a
+property's formal income requirements.
 
 ## Site planning map
 
@@ -57,10 +60,11 @@ AMI limits, ownership exceptions, occupancy rules, and resale restrictions.
 .
 ├── index.html                 # accessible application shell and views
 ├── assets/
-│   ├── app.js                 # eligibility workflow, review rules, and map behavior
+│   ├── app.js                 # case workflow, matching rules, priority support, and map behavior
 │   └── styles.css             # responsive dashboard design
 ├── data/
 │   ├── applications.json      # fictional application records for the prototype
+│   ├── properties.json        # fictional properties and published matching criteria
 │   └── puma_stats.json        # small (22-row) precomputed PUMA-level summary
 ├── scripts/
 │   └── build_data.py          # regenerates data/puma_stats.json from the raw CSV
