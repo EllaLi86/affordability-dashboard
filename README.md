@@ -85,6 +85,13 @@ program eligibility rule, urgency score, or permission to contact anyone. The da
 small deterministic sample across all 22 PUMAs, full modeled audience counts, broad channel ideas,
 area concentrations, filters, and device-local campaign-planning statuses.
 
+The market-first population is split into six mutually exclusive marketing groups by life stage and
+campaign income band: young families with a child under six, school-age families, and adult-only
+households, each split into $75,000–$110,000 and $110,000–$150,000 modeled-income groups. Each group
+has its own audience size, top planning areas, recommended community channel, and message. These
+descriptions use household composition only; they do not claim family relationships that the
+synthetic dataset does not contain.
+
 ## Site planning map
 
 - **Color** = the % of households in that PUMA that are economically vulnerable

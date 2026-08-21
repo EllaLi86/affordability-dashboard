@@ -333,14 +333,20 @@
 
         <div class="metric-grid" id="outreach-metrics" aria-label="Outreach audience summary"></div>
 
+        <section class="outreach-groups-section" aria-labelledby="outreach-groups-title">
+          <div class="section-heading-row outreach-groups-heading"><div><p class="eyebrow">AUDIENCE GROUPS</p><h2 id="outreach-groups-title">Six groups to market differently</h2><p>Each market-first household belongs to one group based on family life stage and income band. Select a group to see its sample households.</p></div><button class="text-button" type="button" data-outreach-group="all">Show all groups</button></div>
+          <div class="outreach-group-grid" id="outreach-groups"></div>
+        </section>
+
         <div class="outreach-layout">
           <section class="outreach-queue-card" aria-label="Synthetic outreach audience">
             <div class="queue-header outreach-queue-header">
-              <div><h2>Audience planning queue</h2><p id="outreach-summary">Loading synthetic household patterns…</p></div>
+              <div><h2>Households represented in these groups</h2><p id="outreach-summary">Loading synthetic household patterns…</p></div>
               <label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Search synthetic households</span><input id="outreach-search" type="search" placeholder="Search ID, area, or tract"></label>
             </div>
             <div class="outreach-filters" aria-label="Outreach filters">
               <label><span class="sr-only">Filter by audience tier</span><select id="outreach-tier-filter"><option value="market-first">Market first</option><option value="all">All planning tiers</option><option value="consider-next">Consider next</option></select></label>
+              <label><span class="sr-only">Filter by audience group</span><select id="outreach-group-filter"><option value="all">All audience groups</option></select></label>
               <label><span class="sr-only">Filter by household size</span><select id="outreach-size-filter"><option value="all">4–5 people</option><option value="4">4 people</option><option value="5">5 people</option></select></label>
               <label><span class="sr-only">Filter by planning area</span><select id="outreach-area-filter"><option value="all">All planning areas</option></select></label>
               <label><span class="sr-only">Filter by outreach channel</span><select id="outreach-channel-filter"><option value="all">All channels</option></select></label>
@@ -466,7 +472,7 @@
       <article><strong>01</strong><div><h3>Start with family-sized households</h3><p>Market first includes synthetic households with exactly four or five members, matching the program's family-sized ownership units.</p></div></article>
       <article><strong>02</strong><div><h3>Focus on low–middle modeled income</h3><p>The planning band is $75,000–$150,000 per year. It is a campaign assumption for this prototype, not an official AMI or eligibility limit.</p></div></article>
       <article><strong>03</strong><div><h3>Look for a realistic affordability bridge</h3><p>Income must be below the modeled Household Living Budget but cover at least half of it. This avoids treating no-income households as the primary ownership-marketing audience.</p></div></article>
-      <article><strong>04</strong><div><h3>Use broad, trusted channels</h3><p>Child age bands suggest community channels such as schools or family-resource partners. They do not identify, locate, or authorize contact with any real household.</p></div></article>
+      <article><strong>04</strong><div><h3>Group households for different campaigns</h3><p>Market-first households are divided into six mutually exclusive groups using child age bands and two income ranges. Each group receives a different broad channel and message; none identifies or authorizes contact with a real household.</p></div></article>
     </div>
     <div class="guardrail-box"><strong>Important limitation</strong><p>The hackathon data contains synthetic household IDs and modeled geography only. The dashboard supports area and channel planning; actual outreach must use consented government or partner contact systems and comply with program policy.</p></div>
     <div class="dialog-actions"><button class="primary-button" type="button" data-close-dialog="outreach-method-dialog">Got it</button></div>

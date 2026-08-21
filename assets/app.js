@@ -25,6 +25,7 @@ const state = {
   outreachData: null,
   outreachSearch: "",
   outreachTier: "market-first",
+  outreachSegment: "all",
   outreachSize: "all",
   outreachArea: "all",
   outreachChannel: "all",
@@ -528,6 +529,7 @@ function getFilteredOutreachHouseholds() {
       || household.puma.includes(query);
     return searchMatch
       && (state.outreachTier === "all" || household.tier === state.outreachTier)
+      && (state.outreachSegment === "all" || household.segmentId === state.outreachSegment)
       && (state.outreachSize === "all" || household.householdSize === Number(state.outreachSize))
       && (state.outreachArea === "all" || household.puma === state.outreachArea)
       && (state.outreachChannel === "all" || household.recommendedChannel === state.outreachChannel);
@@ -556,6 +558,8 @@ function initializeOutreachFilters() {
   const channels = [...new Set(state.outreachData.households.map((household) => household.recommendedChannel))].sort();
   document.getElementById("outreach-channel-filter").innerHTML = '<option value="all">All channels</option>'
     + channels.map((channel) => `<option value="${escapeHtml(channel)}">${escapeHtml(channel)}</option>`).join("");
+  document.getElementById("outreach-group-filter").innerHTML = '<option value="all">All audience groups</option>'
+    + state.outreachData.segments.map((segment) => `<option value="${escapeHtml(segment.id)}">${escapeHtml(segment.name)}</option>`).join("");
 }
 
 function renderOutreachMetrics() {
@@ -588,12 +592,31 @@ function renderOutreachRows() {
     return `
       <tr class="${selected ? "selected" : ""}" data-outreach-id="${escapeHtml(household.id)}" tabindex="0" aria-selected="${selected}">
         <td><div class="outreach-id-cell"><strong>${escapeHtml(household.id)}</strong><span>Census tract ${escapeHtml(household.tract.slice(-6))}</span><span class="badge outreach-${household.tier}">${outreachTierLabel(household.tier)}</span></div></td>
-        <td><div class="cell-stack"><strong>${household.householdSize} people</strong><span>${household.adults} adults · ${household.children} children</span></div></td>
+        <td><div class="cell-stack"><strong>${household.householdSize} people</strong><span>${household.adults} adults · ${household.children} children</span><small class="outreach-group-name">${escapeHtml(household.segmentName)}</small></div></td>
         <td><div class="cell-stack outreach-income-cell"><strong>${formatMoney(household.income)}</strong><span>${household.coveragePercent}% of modeled budget</span><small>${formatMoney(household.annualGap)} annual gap</small></div></td>
         <td><div class="cell-stack outreach-area-cell"><strong>${escapeHtml(household.pumaName)}</strong><span>PUMA ${escapeHtml(household.puma)}</span></div></td>
         <td><div class="channel-cell"><strong>${escapeHtml(household.recommendedChannel)}</strong><span>Broad community outreach</span></div></td>
         <td><div class="campaign-cell"><span class="badge campaign-${statusKey}">${status.label}</span><button class="text-button" type="button" data-outreach-action data-outreach-id="${escapeHtml(household.id)}">${status.action}</button></div></td>
       </tr>
+    `;
+  }).join("");
+}
+
+function renderOutreachGroups() {
+  if (!state.outreachData) return;
+  document.getElementById("outreach-groups").innerHTML = state.outreachData.segments.map((segment) => {
+    const active = state.outreachSegment === segment.id;
+    const topAreas = segment.topAreas.slice(0, 2).map((area) => area.name).join(" · ");
+    return `
+      <button type="button" class="outreach-group-card ${active ? "active" : ""}" data-outreach-group="${escapeHtml(segment.id)}" aria-pressed="${active}">
+        <span class="group-priority">Group ${segment.priority}</span>
+        <span class="group-count"><strong>${formatNumber(segment.count)}</strong><small>${segment.share}% of market-first</small></span>
+        <span class="group-card-copy"><strong>${escapeHtml(segment.name)}</strong><small>${escapeHtml(segment.subtitle)}</small></span>
+        <span class="group-card-stats"><span>Median income <b>${formatMoney(segment.medianIncome)}</b></span><span>Median gap <b>${formatMoney(segment.medianGap)}</b></span></span>
+        <span class="group-channel"><small>Best channel</small><strong>${escapeHtml(segment.channel)}</strong></span>
+        <span class="group-message">${escapeHtml(segment.message)}</span>
+        <span class="group-areas">Largest areas: ${escapeHtml(topAreas)}</span>
+      </button>
     `;
   }).join("");
 }
@@ -619,9 +642,11 @@ function renderOutreachDetail() {
   }
   const statusKey = getOutreachStatus(household.id);
   const status = outreachPlanStages[statusKey];
+  const segment = state.outreachData.segments.find((item) => item.id === household.segmentId);
   detail.innerHTML = `
     <div class="outreach-detail-head"><div><p class="eyebrow">SELECTED SYNTHETIC HOUSEHOLD</p><h2>${escapeHtml(household.id)}</h2><p>${escapeHtml(household.pumaName)} · PUMA ${escapeHtml(household.puma)}</p></div><span class="badge outreach-${household.tier}">${outreachTierLabel(household.tier)}</span></div>
     <div class="outreach-fit-box"><strong>Why this audience fits</strong><ul><li>${household.householdSize}-person household aligns with family-sized units</li><li>${formatMoney(household.income)} is within the low–middle campaign band</li><li>Income covers ${household.coveragePercent}% of the modeled Household Living Budget</li></ul></div>
+    ${segment ? `<div class="selected-group-summary"><span>Audience group</span><strong>${escapeHtml(segment.name)}</strong><p>${escapeHtml(segment.message)}</p></div>` : ""}
     <div class="outreach-detail-facts"><div><span>Adults / children</span><strong>${household.adults} / ${household.children}</strong></div><div><span>Annual budget gap</span><strong>${formatMoney(household.annualGap)}</strong></div><div><span>Modeled housing cost</span><strong>${formatMoney(household.housingCostMonth)} / month</strong></div><div><span>Campaign status</span><strong>${status.label}</strong></div></div>
     <div class="channel-recommendation"><span class="segment-icon" aria-hidden="true">◎</span><div><p class="eyebrow">SUGGESTED CHANNEL</p><h3>${escapeHtml(household.recommendedChannel)}</h3><p>${escapeHtml(household.channelReason)}</p></div></div>
     <button class="primary-button outreach-plan-button" type="button" data-outreach-action data-outreach-id="${escapeHtml(household.id)}">${status.action}</button>
@@ -631,6 +656,7 @@ function renderOutreachDetail() {
 
 function renderOutreachWorkspace() {
   renderOutreachMetrics();
+  renderOutreachGroups();
   renderOutreachRows();
   renderOutreachAreas();
   renderOutreachDetail();
@@ -1143,14 +1169,32 @@ function bindEvents() {
   });
   [
     ["outreach-tier-filter", "outreachTier"],
+    ["outreach-group-filter", "outreachSegment"],
     ["outreach-size-filter", "outreachSize"],
     ["outreach-area-filter", "outreachArea"],
     ["outreach-channel-filter", "outreachChannel"],
     ["outreach-sort", "outreachSort"],
   ].forEach(([id, stateKey]) => document.getElementById(id).addEventListener("change", (event) => {
     state[stateKey] = event.target.value;
+    if (stateKey === "outreachTier" && state.outreachTier !== "market-first") {
+      state.outreachSegment = "all";
+      document.getElementById("outreach-group-filter").value = "all";
+    }
+    if (stateKey === "outreachSegment" && state.outreachSegment !== "all") {
+      state.outreachTier = "market-first";
+      document.getElementById("outreach-tier-filter").value = "market-first";
+    }
     renderOutreachWorkspace();
   }));
+  document.querySelector(".outreach-groups-section").addEventListener("click", (event) => {
+    const group = event.target.closest("[data-outreach-group]");
+    if (!group) return;
+    state.outreachSegment = group.dataset.outreachGroup;
+    state.outreachTier = "market-first";
+    document.getElementById("outreach-group-filter").value = state.outreachSegment;
+    document.getElementById("outreach-tier-filter").value = "market-first";
+    renderOutreachWorkspace();
+  });
   document.getElementById("outreach-rows").addEventListener("click", (event) => {
     const action = event.target.closest("[data-outreach-action]");
     if (action) {
