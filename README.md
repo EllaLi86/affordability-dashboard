@@ -63,6 +63,29 @@ python scripts/build_data.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.c
 
 This overwrites `data/puma_stats.json`. Commit the updated file — nothing else needs to change.
 
+## Low-mid income & age targeting
+
+Two additional views beyond the base vulnerability map:
+
+- **Low-mid income priority** (`data/low_mid_income_priority.json`) — PUMAs re-ranked by share of
+  "near-miss" households (80–100% of required income) instead of raw vulnerability rate, since
+  near-miss households are less likely to already be served by existing low-income assistance.
+- **Age composition** (`data/tract_age_demographics.json`) — real Census ACS 5-Year age data
+  (table S0101) for Chula Vista/National City, since the synthetic HLB dataset has no real age
+  breakdown.
+
+```bash
+python scripts/rank_low_mid_income.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
+```
+
+This overwrites `data/low_mid_income_priority.csv/.json`.
+
+```bash
+python scripts/fetch_age_demographics.py --api-key YOUR_CENSUS_API_KEY
+```
+
+Requires a free [Census API key](https://api.census.gov/data/key_signup.html). Overwrites
+`data/tract_age_demographics.json`.
 
 ## Data notes / caveats
 
