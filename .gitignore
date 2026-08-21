@@ -1,0 +1,16 @@
+# Never commit the raw multi-hundred-MB source data
+*.csv
+*.csv.gz
+!data/*.json
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/

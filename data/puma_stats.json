@@ -1,0 +1,251 @@
+{
+  "county_summary": {
+    "county_vulnerability_rate": 44.4,
+    "total_households": 1171016,
+    "total_vulnerable": 520213
+  },
+  "pumas": [
+    {
+      "puma_code": "07330",
+      "puma_name": "Chula Vista (West) & National City",
+      "n_households": 56438,
+      "n_vulnerable": 35545,
+      "vulnerability_rate": 63.0,
+      "median_income": 71469.0,
+      "median_hlb_year": 85572.0,
+      "median_housing_cost_month": 2080.0,
+      "median_gap_vulnerable": 40652.0
+    },
+    {
+      "puma_code": "07327",
+      "puma_name": "San Diego City SE (Encanto & Skyline)",
+      "n_households": 41741,
+      "n_vulnerable": 25163,
+      "vulnerability_rate": 60.3,
+      "median_income": 87107.0,
+      "median_hlb_year": 98115.0,
+      "median_housing_cost_month": 2380.0,
+      "median_gap_vulnerable": 43712.0
+    },
+    {
+      "puma_code": "07322",
+      "puma_name": "South San Diego / Otay Mesa & South Bay",
+      "n_households": 40454,
+      "n_vulnerable": 23521,
+      "vulnerability_rate": 58.1,
+      "median_income": 85913.0,
+      "median_hlb_year": 96631.0,
+      "median_housing_cost_month": 2502.0,
+      "median_gap_vulnerable": 41566.0
+    },
+    {
+      "puma_code": "07301",
+      "puma_name": "Oceanside & Camp Pendleton",
+      "n_households": 62719,
+      "n_vulnerable": 34245,
+      "vulnerability_rate": 54.6,
+      "median_income": 91162.0,
+      "median_hlb_year": 83101.0,
+      "median_housing_cost_month": 2450.0,
+      "median_gap_vulnerable": 41398.0
+    },
+    {
+      "puma_code": "07313",
+      "puma_name": "El Cajon & Santee",
+      "n_households": 63071,
+      "n_vulnerable": 33052,
+      "vulnerability_rate": 52.4,
+      "median_income": 86686.0,
+      "median_hlb_year": 80632.0,
+      "median_housing_cost_month": 2281.0,
+      "median_gap_vulnerable": 40871.0
+    },
+    {
+      "puma_code": "07306",
+      "puma_name": "Escondido (East)",
+      "n_households": 45218,
+      "n_vulnerable": 23597,
+      "vulnerability_rate": 52.2,
+      "median_income": 94085.0,
+      "median_hlb_year": 86615.0,
+      "median_housing_cost_month": 2416.0,
+      "median_gap_vulnerable": 42460.0
+    },
+    {
+      "puma_code": "07317",
+      "puma_name": "Mid-City (City Heights area)",
+      "n_households": 61435,
+      "n_vulnerable": 31747,
+      "vulnerability_rate": 51.7,
+      "median_income": 77159.0,
+      "median_hlb_year": 72846.0,
+      "median_housing_cost_month": 2066.0,
+      "median_gap_vulnerable": 38823.0
+    },
+    {
+      "puma_code": "07323",
+      "puma_name": "Vista",
+      "n_households": 37669,
+      "n_vulnerable": 19311,
+      "vulnerability_rate": 51.3,
+      "median_income": 95502.0,
+      "median_hlb_year": 82356.0,
+      "median_housing_cost_month": 2410.0,
+      "median_gap_vulnerable": 37987.0
+    },
+    {
+      "puma_code": "07325",
+      "puma_name": "San Marcos & Escondido (West)",
+      "n_households": 44195,
+      "n_vulnerable": 20350,
+      "vulnerability_rate": 46.0,
+      "median_income": 107392.0,
+      "median_hlb_year": 87475.0,
+      "median_housing_cost_month": 2540.0,
+      "median_gap_vulnerable": 42421.0
+    },
+    {
+      "puma_code": "07329",
+      "puma_name": "Sweetwater / Chula Vista (East)",
+      "n_households": 52955,
+      "n_vulnerable": 24165,
+      "vulnerability_rate": 45.6,
+      "median_income": 137059.0,
+      "median_hlb_year": 119365.0,
+      "median_housing_cost_month": 3482.0,
+      "median_gap_vulnerable": 50300.0
+    },
+    {
+      "puma_code": "07328",
+      "puma_name": "Lemon Grove, La Presa & Spring Valley",
+      "n_households": 42352,
+      "n_vulnerable": 18888,
+      "vulnerability_rate": 44.6,
+      "median_income": 103856.0,
+      "median_hlb_year": 84826.0,
+      "median_housing_cost_month": 2290.0,
+      "median_gap_vulnerable": 37742.0
+    },
+    {
+      "puma_code": "07312",
+      "puma_name": "Mira Mesa & University Heights",
+      "n_households": 41739,
+      "n_vulnerable": 18345,
+      "vulnerability_rate": 44.0,
+      "median_income": 109139.0,
+      "median_hlb_year": 87907.0,
+      "median_housing_cost_month": 2890.0,
+      "median_gap_vulnerable": 49537.0
+    },
+    {
+      "puma_code": "07307",
+      "puma_name": "Lakeside, Winter Gardens & Ramona",
+      "n_households": 38023,
+      "n_vulnerable": 16376,
+      "vulnerability_rate": 43.1,
+      "median_income": 112165.0,
+      "median_hlb_year": 83595.0,
+      "median_housing_cost_month": 2210.0,
+      "median_gap_vulnerable": 37432.0
+    },
+    {
+      "puma_code": "07302",
+      "puma_name": "Fallbrook, Alpine & Valley Center",
+      "n_households": 43375,
+      "n_vulnerable": 18343,
+      "vulnerability_rate": 42.3,
+      "median_income": 104947.0,
+      "median_hlb_year": 80748.0,
+      "median_housing_cost_month": 2140.0,
+      "median_gap_vulnerable": 39742.0
+    },
+    {
+      "puma_code": "07314",
+      "puma_name": "Navajo & La Mesa",
+      "n_households": 63515,
+      "n_vulnerable": 26083,
+      "vulnerability_rate": 41.1,
+      "median_income": 107392.0,
+      "median_hlb_year": 83356.0,
+      "median_housing_cost_month": 2693.0,
+      "median_gap_vulnerable": 38551.0
+    },
+    {
+      "puma_code": "07315",
+      "puma_name": "Clairemont & Kearny Mesa",
+      "n_households": 68281,
+      "n_vulnerable": 26874,
+      "vulnerability_rate": 39.4,
+      "median_income": 109778.0,
+      "median_hlb_year": 80313.0,
+      "median_housing_cost_month": 2651.0,
+      "median_gap_vulnerable": 39350.0
+    },
+    {
+      "puma_code": "07316",
+      "puma_name": "Centre City & Balboa Park",
+      "n_households": 92091,
+      "n_vulnerable": 36094,
+      "vulnerability_rate": 39.2,
+      "median_income": 93403.0,
+      "median_hlb_year": 75782.0,
+      "median_housing_cost_month": 2393.0,
+      "median_gap_vulnerable": 38053.0
+    },
+    {
+      "puma_code": "07324",
+      "puma_name": "Carlsbad",
+      "n_households": 50180,
+      "n_vulnerable": 18285,
+      "vulnerability_rate": 36.4,
+      "median_income": 136851.0,
+      "median_hlb_year": 92930.0,
+      "median_housing_cost_month": 2920.0,
+      "median_gap_vulnerable": 43805.0
+    },
+    {
+      "puma_code": "07310",
+      "puma_name": "San Diego City (SW / Central Coastal)",
+      "n_households": 71735,
+      "n_vulnerable": 23771,
+      "vulnerability_rate": 33.1,
+      "median_income": 128035.0,
+      "median_hlb_year": 82222.0,
+      "median_housing_cost_month": 2570.0,
+      "median_gap_vulnerable": 35253.0
+    },
+    {
+      "puma_code": "07308",
+      "puma_name": "Rancho Bernardo & Poway",
+      "n_households": 47841,
+      "n_vulnerable": 15139,
+      "vulnerability_rate": 31.6,
+      "median_income": 142634.0,
+      "median_hlb_year": 92332.0,
+      "median_housing_cost_month": 2800.0,
+      "median_gap_vulnerable": 35656.0
+    },
+    {
+      "puma_code": "07311",
+      "puma_name": "San Diego City (NW / Del Mar Mesa)",
+      "n_households": 43271,
+      "n_vulnerable": 12792,
+      "vulnerability_rate": 29.6,
+      "median_income": 186571.0,
+      "median_hlb_year": 101390.0,
+      "median_housing_cost_month": 3260.0,
+      "median_gap_vulnerable": 51078.0
+    },
+    {
+      "puma_code": "07326",
+      "puma_name": "San Dieguito & Encinitas",
+      "n_households": 62718,
+      "n_vulnerable": 18527,
+      "vulnerability_rate": 29.5,
+      "median_income": 167516.0,
+      "median_hlb_year": 92958.0,
+      "median_housing_cost_month": 2857.0,
+      "median_gap_vulnerable": 39219.0
+    }
+  ]
+}
