@@ -1,263 +1,315 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>San Diego County Affordability Dashboard</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<style>
-  :root {
-    --ink: #1a1a2e;
-    --sub: #5f5e5a;
-    --mute: #898781;
-    --coral: #d85a30;
-    --teal: #0f6e56;
-    --border: #e1e0d9;
-    --card: #f7f6f2;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #ffffff;
-    color: var(--ink);
-  }
-  header {
-    padding: 24px 32px 12px;
-    border-bottom: 1px solid var(--border);
-  }
-  h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
-  .subtitle { color: var(--sub); font-size: 14px; margin: 0 0 16px; }
-  .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-  .stat-card {
-    background: var(--card);
-    border-radius: 10px;
-    padding: 12px 18px;
-    min-width: 160px;
-  }
-  .stat-card .value { font-size: 22px; font-weight: 700; color: var(--coral); }
-  .stat-card .label { font-size: 12px; color: var(--mute); margin-top: 2px; }
-  main {
-    display: flex;
-    gap: 0;
-    align-items: stretch;
-  }
-  #map-container {
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 12px;
-  }
-  #map { width: 100%; height: 640px; }
-  #detail-panel {
-    width: 300px;
-    flex: 0 0 300px;
-    padding: 20px;
-    border-left: 1px solid var(--border);
-  }
-  #detail-panel h2 { font-size: 16px; margin: 0 0 4px; }
-  #detail-panel .puma-code { font-size: 12px; color: var(--mute); margin-bottom: 16px; }
-  .metric { margin-bottom: 14px; }
-  .metric .m-value { font-size: 20px; font-weight: 700; }
-  .metric .m-label { font-size: 12px; color: var(--mute); }
-  .metric .m-value.coral { color: var(--coral); }
-  .metric .m-value.teal { color: var(--teal); }
-  #status {
-    padding: 10px 32px;
-    font-size: 13px;
-    color: var(--mute);
-  }
-  #status.error { color: var(--coral); }
-  footer {
-    padding: 12px 32px 24px;
-    font-size: 11px;
-    color: var(--mute);
-  }
-  a { color: var(--teal); }
-  @media (max-width: 860px) {
-    main { flex-direction: column; }
-    #detail-panel { width: auto; flex: none; border-left: none; border-top: 1px solid var(--border); }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="San Diego County affordable housing program operations dashboard.">
+  <title>Housing Access | Program Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+  <script src="assets/app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
 
-<header>
-  <h1>Who's being priced out of San Diego?</h1>
-  <p class="subtitle">Economically vulnerable households by PUMA area &mdash; San Diego County Household Living Budget dataset (2024)</p>
-  <div class="stat-row" id="stat-row">
-    <div class="stat-card"><div class="value" id="stat-county-rate">&ndash;</div><div class="label">of households priced out, countywide</div></div>
-    <div class="stat-card"><div class="value" id="stat-total-vuln">&ndash;</div><div class="label">vulnerable households</div></div>
-    <div class="stat-card"><div class="value" id="stat-total-hh">&ndash;</div><div class="label">total households analyzed</div></div>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">HA</span>
+        <div>
+          <span class="brand-kicker">County of San Diego</span>
+          <strong>Housing Access</strong>
+        </div>
+      </div>
+
+      <nav class="nav-list">
+        <button class="nav-item" type="button" data-view="overview">
+          <span class="nav-icon" aria-hidden="true">⌂</span>
+          <span>Program overview</span>
+        </button>
+        <button class="nav-item active" type="button" data-view="applications" aria-current="page">
+          <span class="nav-icon" aria-hidden="true">▤</span>
+          <span>Applications</span>
+          <span class="nav-count" id="nav-new-count">0</span>
+        </button>
+        <button class="nav-item" type="button" data-view="outreach">
+          <span class="nav-icon" aria-hidden="true">◎</span>
+          <span>Outreach</span>
+          <span class="nav-soon">Soon</span>
+        </button>
+        <button class="nav-item" type="button" data-view="map">
+          <span class="nav-icon" aria-hidden="true">◇</span>
+          <span>Site planning map</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="user-avatar" aria-hidden="true">JM</div>
+        <div>
+          <strong>Jordan Martinez</strong>
+          <span>Program reviewer</span>
+        </div>
+        <button class="icon-button light" type="button" aria-label="Account options">•••</button>
+      </div>
+    </aside>
+
+    <main id="main-content" class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+        <div class="breadcrumb"><span>Housing Access</span><b>/</b><strong id="breadcrumb-current">Applications</strong></div>
+        <div class="topbar-actions">
+          <button class="icon-button" type="button" aria-label="Notifications">●</button>
+          <button class="help-button" type="button">Help &amp; guidance</button>
+        </div>
+      </header>
+
+      <section class="view active" id="applications-view" data-view-panel="applications">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">APPLICATION OPERATIONS</p>
+            <h1>Application review</h1>
+            <p>Review households in a consistent order, resolve missing information, and record each decision.</p>
+          </div>
+          <button class="primary-button" id="open-intake" type="button"><span aria-hidden="true">＋</span> Add application</button>
+        </div>
+
+        <div class="prototype-notice" role="note">
+          <span class="notice-icon" aria-hidden="true">i</span>
+          <div><strong>Prototype with synthetic demonstration records.</strong> Priority supports review order only. Staff determine eligibility and final outcomes.</div>
+          <button type="button" id="open-method">View scoring method</button>
+        </div>
+
+        <div class="metric-grid" id="application-metrics" aria-label="Application queue summary"></div>
+
+        <div class="workspace-card">
+          <div class="queue-header">
+            <div>
+              <h2>Review queue</h2>
+              <p id="queue-summary">Loading applications…</p>
+            </div>
+            <div class="queue-actions">
+              <label class="search-field">
+                <span aria-hidden="true">⌕</span>
+                <span class="sr-only">Search applications</span>
+                <input id="application-search" type="search" placeholder="Search name or ID">
+              </label>
+              <label class="select-field">
+                <span class="sr-only">Sort applications</span>
+                <select id="sort-applications">
+                  <option value="priority">Priority: highest first</option>
+                  <option value="oldest">Oldest application first</option>
+                  <option value="newest">Newest application first</option>
+                  <option value="name">Applicant name</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-row" aria-label="Application filters">
+            <div class="status-tabs" role="tablist" aria-label="Filter by status">
+              <button class="status-tab active" type="button" data-status="all" role="tab" aria-selected="true">All <span id="count-all">0</span></button>
+              <button class="status-tab" type="button" data-status="new" role="tab" aria-selected="false">New <span id="count-new">0</span></button>
+              <button class="status-tab" type="button" data-status="in-review" role="tab" aria-selected="false">In review <span id="count-in-review">0</span></button>
+              <button class="status-tab" type="button" data-status="needs-info" role="tab" aria-selected="false">Needs info <span id="count-needs-info">0</span></button>
+              <button class="status-tab" type="button" data-status="approved" role="tab" aria-selected="false">Approved <span id="count-approved">0</span></button>
+            </div>
+            <div class="secondary-filters">
+              <label>
+                <span class="sr-only">Filter by priority</span>
+                <select id="priority-filter">
+                  <option value="all">All priorities</option>
+                  <option value="urgent">Urgent</option>
+                  <option value="high">High</option>
+                  <option value="standard">Standard</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Filter by household size</span>
+                <select id="size-filter">
+                  <option value="all">All household sizes</option>
+                  <option value="4-5">4–5 members</option>
+                  <option value="6+">6+ members</option>
+                  <option value="1-3">1–3 members</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="queue-layout">
+            <div class="table-wrap">
+              <table class="application-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Applicant</th>
+                    <th scope="col">Household</th>
+                    <th scope="col">Income coverage</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Priority</th>
+                    <th scope="col"><span class="sr-only">Open record</span></th>
+                  </tr>
+                </thead>
+                <tbody id="application-rows"></tbody>
+              </table>
+              <div class="empty-state" id="empty-state" hidden>
+                <span aria-hidden="true">⌕</span>
+                <h3>No applications found</h3>
+                <p>Try changing your search or filters.</p>
+                <button class="secondary-button" id="clear-filters" type="button">Clear filters</button>
+              </div>
+            </div>
+
+            <aside class="case-panel" id="case-panel" aria-label="Selected application details"></aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="map-view" data-view-panel="map">
+        <div class="page-heading compact-heading">
+          <div>
+            <p class="eyebrow">SITE PLANNING</p>
+            <h1>Where is housing need concentrated?</h1>
+            <p>Compare economic vulnerability across San Diego County planning areas.</p>
+          </div>
+        </div>
+
+        <div class="metric-grid" id="map-metrics">
+          <article class="metric-card"><span>Countywide priced out</span><strong id="stat-county-rate">—</strong><small>household vulnerability rate</small></article>
+          <article class="metric-card"><span>Vulnerable households</span><strong id="stat-total-vuln">—</strong><small>modeled countywide</small></article>
+          <article class="metric-card"><span>Households analyzed</span><strong id="stat-total-hh">—</strong><small>synthetic records</small></article>
+          <article class="metric-card"><span>Planning areas</span><strong>22</strong><small>San Diego County PUMAs</small></article>
+        </div>
+
+        <div class="map-workspace">
+          <div class="map-main">
+            <div class="map-title-row">
+              <div>
+                <h2>Household vulnerability by PUMA</h2>
+                <p>Higher percentages indicate a larger share of households below the modeled basic-needs threshold.</p>
+              </div>
+            </div>
+            <div id="map-status">Open this view to load Census Bureau boundaries…</div>
+            <div id="map" aria-label="Map of household vulnerability by San Diego County PUMA"></div>
+          </div>
+          <aside class="map-detail" id="map-detail">
+            <p class="eyebrow">AREA DETAIL</p>
+            <h2 id="detail-name">Hover over a planning area</h2>
+            <div class="detail-code" id="detail-code">PUMA data</div>
+            <div class="map-stat hero-map-stat"><span>Households priced out</span><strong id="detail-vuln">—</strong></div>
+            <div class="map-stat"><span>Vulnerable / modeled</span><strong id="detail-n">—</strong></div>
+            <div class="map-stat"><span>Median household income</span><strong id="detail-income">—</strong></div>
+            <div class="map-stat"><span>Modeled required income</span><strong id="detail-hlb">—</strong></div>
+            <div class="map-stat"><span>Median annual shortfall</span><strong id="detail-gap">—</strong></div>
+          </aside>
+        </div>
+        <p class="data-footnote">Household Living Budget synthetic dataset, 2024. Records represent modeled households, not identifiable people. PUMA boundaries are fetched from U.S. Census Bureau TIGERweb.</p>
+      </section>
+
+      <section class="view" id="overview-view" data-view-panel="overview">
+        <div class="placeholder-page">
+          <span class="placeholder-mark" aria-hidden="true">⌂</span>
+          <p class="eyebrow">PROGRAM OVERVIEW</p>
+          <h1>One place to operate the housing program</h1>
+          <p>This area is ready for program milestones, unit inventory, placements, and outcome reporting.</p>
+          <button class="primary-button" type="button" data-go-to="applications">Review applications</button>
+        </div>
+      </section>
+
+      <section class="view" id="outreach-view" data-view-panel="outreach">
+        <div class="placeholder-page">
+          <span class="placeholder-mark" aria-hidden="true">◎</span>
+          <p class="eyebrow">OUTREACH PLANNING</p>
+          <h1>Reach households who may not know about the program</h1>
+          <p>This area is reserved for audience segments, channel planning, languages, and campaign follow-up.</p>
+          <span class="coming-badge">Planned next</span>
+        </div>
+      </section>
+    </main>
   </div>
-</header>
 
-<div id="status">Loading PUMA boundaries from the Census Bureau (TIGERweb)&hellip;</div>
+  <dialog id="intake-dialog" class="app-dialog">
+    <form id="intake-form" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">MANUAL INTAKE</p>
+          <h2>Add an application</h2>
+          <p>Create a queue record from a paper, phone, or assisted application.</p>
+        </div>
+        <button class="dialog-close" type="button" data-close-dialog="intake-dialog" aria-label="Close">×</button>
+      </div>
 
-<main>
-  <div id="map-container"><div id="map"></div></div>
-  <div id="detail-panel">
-    <h2 id="detail-name">Hover a PUMA area</h2>
-    <div class="puma-code" id="detail-code">&nbsp;</div>
-    <div class="metric">
-      <div class="m-value coral" id="detail-vuln">&ndash;</div>
-      <div class="m-label">% of households priced out (economically vulnerable)</div>
+      <div class="form-section">
+        <h3>Applicant and household</h3>
+        <div class="form-grid">
+          <label class="full-field">Applicant name<input name="applicant" autocomplete="name" required placeholder="Full name"></label>
+          <label>Adults<input name="adults" type="number" min="1" max="8" value="2" required></label>
+          <label>Children<input name="children" type="number" min="0" max="10" value="2" required></label>
+          <label>Youngest child age<input name="youngestChild" type="number" min="0" max="18" value="5"></label>
+          <label>Preferred language
+            <select name="language"><option>English</option><option>Spanish</option><option>Tagalog</option><option>Vietnamese</option><option>Arabic</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Financial and housing need</h3>
+        <div class="form-grid">
+          <label>Annual household income<input name="income" type="number" min="0" step="500" value="42000" required></label>
+          <label>Modeled annual HLB<input name="hlb" type="number" min="1" step="500" value="118000" required></label>
+          <label class="full-field">Current housing situation
+            <select name="housing" required>
+              <option value="eviction">Eviction filed or move-out notice</option>
+              <option value="unhoused">Unhoused</option>
+              <option value="temporary">Temporary or doubled-up housing</option>
+              <option value="severe-burden">Paying over 50% of income toward rent</option>
+              <option value="stable">Stable housing</option>
+            </select>
+          </label>
+          <label class="full-field">Planning area
+            <select name="puma" required>
+              <option value="07330">Chula Vista (West) &amp; National City</option>
+              <option value="07327">San Diego City SE (Encanto &amp; Skyline)</option>
+              <option value="07322">South San Diego / Otay Mesa &amp; South Bay</option>
+              <option value="07317">Mid-City (City Heights area)</option>
+              <option value="07313">El Cajon &amp; Santee</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="score-preview" aria-live="polite">
+        <div><span>Estimated review priority</span><strong id="intake-priority-label">High priority</strong></div>
+        <span class="score-orb" id="intake-score">—</span>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="secondary-button" type="button" data-close-dialog="intake-dialog">Cancel</button>
+        <button class="primary-button" type="submit">Add to review queue</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="method-dialog" class="app-dialog method-dialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">EXPLAINABLE REVIEW ORDER</p>
+        <h2>How priority is calculated</h2>
+        <p>The 100-point score helps reviewers see the most time-sensitive applications first.</p>
+      </div>
+      <button class="dialog-close" type="button" data-close-dialog="method-dialog" aria-label="Close">×</button>
     </div>
-    <div class="metric">
-      <div class="m-value" id="detail-n">&ndash;</div>
-      <div class="m-label">households vulnerable / total sampled</div>
+    <div class="method-list">
+      <article><strong>40</strong><div><h3>Financial gap</h3><p>How far reported income falls below the household's modeled basic-needs threshold.</p></div></article>
+      <article><strong>30</strong><div><h3>Housing instability</h3><p>Documented homelessness, eviction risk, temporary housing, or severe rent burden.</p></div></article>
+      <article><strong>18</strong><div><h3>Household needs</h3><p>Children, very young children, single-caregiver households, and larger households.</p></div></article>
+      <article><strong>12</strong><div><h3>Time waiting</h3><p>One point for each completed week since submission, capped at twelve weeks.</p></div></article>
     </div>
-    <div class="metric">
-      <div class="m-value" id="detail-income">&ndash;</div>
-      <div class="m-label">median household income</div>
-    </div>
-    <div class="metric">
-      <div class="m-value" id="detail-hlb">&ndash;</div>
-      <div class="m-label">median required income (HLB)</div>
-    </div>
-    <div class="metric">
-      <div class="m-value teal" id="detail-gap">&ndash;</div>
-      <div class="m-label">median annual gap, vulnerable households</div>
-    </div>
-  </div>
-</main>
+    <div class="guardrail-box"><strong>Built-in guardrails</strong><p>The score excludes name, language, geography, race, gender, disability, and other protected traits. It never auto-approves, denies, or determines eligibility. Staff can see every contributing factor and must record a reason for final decisions.</p></div>
+    <div class="dialog-actions"><button class="primary-button" type="button" data-close-dialog="method-dialog">Got it</button></div>
+  </dialog>
 
-<footer>
-  Household Living Budget synthetic dataset, San Diego HLB Hackathon 2024. PUMA boundaries: U.S. Census
-  Bureau TIGERweb (2020 vintage), fetched live from
-  <a href="https://tigerweb.geo.census.gov/" target="_blank" rel="noopener">tigerweb.geo.census.gov</a>.
-  Every row in the source data is a synthetic household &mdash; valid for distributions and patterns, not individual cases.
-</footer>
-
-<script>
-const STATUS_EL = document.getElementById('status');
-
-function setStatus(msg, isError) {
-  STATUS_EL.textContent = msg;
-  STATUS_EL.className = isError ? 'error' : '';
-}
-
-function fmtPct(v) { return v.toFixed(1) + '%'; }
-function fmtMoney(v) { return '$' + Math.round(v).toLocaleString(); }
-function fmtInt(v) { return Math.round(v).toLocaleString(); }
-
-async function main() {
-  let statsResp, statsData;
-  try {
-    statsResp = await fetch('data/puma_stats.json');
-    if (!statsResp.ok) throw new Error('HTTP ' + statsResp.status);
-    statsData = await statsResp.json();
-  } catch (err) {
-    setStatus(
-      'Could not load data/puma_stats.json (' + err.message + '). ' +
-      'If you opened this file directly (file://), most browsers block local fetches ' +
-      '\u2014 serve the folder instead, e.g. `python -m http.server` and open http://localhost:8000, ' +
-      'or use GitHub Pages.',
-      true
-    );
-    return;
-  }
-
-  const pumas = statsData.pumas;
-  const byCode = {};
-  pumas.forEach(p => { byCode[p.puma_code] = p; });
-
-  document.getElementById('stat-county-rate').textContent = fmtPct(statsData.county_summary.county_vulnerability_rate);
-  document.getElementById('stat-total-vuln').textContent = fmtInt(statsData.county_summary.total_vulnerable);
-  document.getElementById('stat-total-hh').textContent = fmtInt(statsData.county_summary.total_households);
-
-  const pumaCodes = pumas.map(p => p.puma_code);
-  const whereClause = "STATE='06' AND PUMA IN (" + pumaCodes.map(c => `'${c}'`).join(',') + ")";
-  const geoUrl = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/PUMA_TAD_TAZ_UGA_ZCTA/MapServer/0/query'
-    + '?where=' + encodeURIComponent(whereClause)
-    + '&outFields=STATE,PUMA,BASENAME,NAME,GEOID'
-    + '&returnGeometry=true&outSR=4326&f=geojson';
-
-  let geojson;
-  try {
-    const geoResp = await fetch(geoUrl);
-    if (!geoResp.ok) throw new Error('HTTP ' + geoResp.status);
-    geojson = await geoResp.json();
-    if (!geojson.features || geojson.features.length === 0) throw new Error('No PUMA features returned');
-  } catch (err) {
-    setStatus(
-      'Could not load PUMA boundaries from the Census Bureau TIGERweb service (' + err.message + '). ' +
-      'This requires an internet connection and an unblocked connection to tigerweb.geo.census.gov ' +
-      '(corporate/campus wifi sometimes blocks it). Try a different network, or download the GeoJSON ' +
-      'once and swap the fetch for a local file \u2014 see README.md.',
-      true
-    );
-    return;
-  }
-
-  setStatus('');
-
-  const locations = geojson.features.map(f => f.properties.PUMA);
-  const z = locations.map(code => (byCode[code] ? byCode[code].vulnerability_rate : null));
-  const hoverText = locations.map(code => {
-    const p = byCode[code];
-    if (!p) return 'No data';
-    return `<b>${p.puma_name}</b><br>` +
-           `PUMA ${p.puma_code}<br>` +
-           `<b>${fmtPct(p.vulnerability_rate)}</b> priced out<br>` +
-           `${fmtInt(p.n_vulnerable)} of ${fmtInt(p.n_households)} households<br>` +
-           `Median income: ${fmtMoney(p.median_income)}<br>` +
-           `Median required income: ${fmtMoney(p.median_hlb_year)}`;
-  });
-
-  const trace = {
-    type: 'choroplethmapbox',
-    geojson: geojson,
-    locations: locations,
-    z: z,
-    featureidkey: 'properties.PUMA',
-    colorscale: [
-      [0, '#e6f1fb'], [0.25, '#85b7eb'], [0.5, '#f0997b'], [0.75, '#d85a30'], [1, '#791f1f']
-    ],
-    zmin: 0,
-    zmax: 70,
-    marker: { line: { width: 1.2, color: '#ffffff' }, opacity: 0.85 },
-    text: hoverText,
-    hoverinfo: 'text',
-    colorbar: {
-      title: { text: '% priced out', side: 'right' },
-      ticksuffix: '%',
-      thickness: 14,
-    },
-  };
-
-  const layout = {
-    mapbox: {
-      style: 'open-street-map',
-      center: { lat: 33.02, lon: -116.9 },
-      zoom: 8.2,
-    },
-    margin: { l: 0, r: 0, t: 0, b: 0 },
-  };
-
-  Plotly.newPlot('map', [trace], layout, { responsive: true, displayModeBar: false });
-
-  const mapDiv = document.getElementById('map');
-
-  function showDetail(code) {
-    const p = byCode[code];
-    if (!p) return;
-    document.getElementById('detail-name').textContent = p.puma_name;
-    document.getElementById('detail-code').textContent = 'PUMA ' + p.puma_code;
-    document.getElementById('detail-vuln').textContent = fmtPct(p.vulnerability_rate);
-    document.getElementById('detail-n').textContent = fmtInt(p.n_vulnerable) + ' / ' + fmtInt(p.n_households);
-    document.getElementById('detail-income').textContent = fmtMoney(p.median_income);
-    document.getElementById('detail-hlb').textContent = fmtMoney(p.median_hlb_year);
-    document.getElementById('detail-gap').textContent = fmtMoney(p.median_gap_vulnerable) + ' / yr';
-  }
-
-  mapDiv.on('plotly_hover', (evt) => {
-    const code = evt.points[0].location;
-    showDetail(code);
-  });
-}
-
-main();
-</script>
-
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
