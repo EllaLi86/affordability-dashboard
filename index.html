@@ -1,435 +1,553 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>San Diego County Affordability Dashboard</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<style>
-  :root {
-    --ink: #1a1a2e;
-    --sub: #5f5e5a;
-    --mute: #898781;
-    --coral: #d85a30;
-    --teal: #0f6e56;
-    --border: #e1e0d9;
-    --card: #f7f6f2;
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    background: #ffffff;
-    color: var(--ink);
-  }
-  header {
-    padding: 24px 32px 12px;
-    border-bottom: 1px solid var(--border);
-  }
-  h1 { font-size: 24px; font-weight: 600; margin: 0 0 4px; }
-  .subtitle { color: var(--sub); font-size: 14px; margin: 0 0 16px; }
-  .stat-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 16px; }
-  .stat-card {
-    background: var(--card);
-    border-radius: 10px;
-    padding: 12px 18px;
-    min-width: 160px;
-  }
-  .stat-card .value { font-size: 22px; font-weight: 700; color: var(--coral); }
-  .stat-card .label { font-size: 12px; color: var(--mute); margin-top: 2px; }
-  main {
-    display: flex;
-    gap: 0;
-    align-items: stretch;
-  }
-  #map-container {
-    flex: 1 1 auto;
-    min-width: 0;
-    padding: 12px;
-  }
-  #map { width: 100%; height: 640px; }
-  #detail-panel {
-    width: 300px;
-    flex: 0 0 300px;
-    padding: 20px;
-    border-left: 1px solid var(--border);
-  }
-  #detail-panel h2 { font-size: 16px; margin: 0 0 4px; }
-  #detail-panel .puma-code { font-size: 12px; color: var(--mute); margin-bottom: 16px; }
-  .metric { margin-bottom: 14px; }
-  .metric .m-value { font-size: 20px; font-weight: 700; }
-  .metric .m-label { font-size: 12px; color: var(--mute); }
-  .metric .m-value.coral { color: var(--coral); }
-  .metric .m-value.teal { color: var(--teal); }
-  #status {
-    padding: 10px 32px;
-    font-size: 13px;
-    color: var(--mute);
-  }
-  #status.error { color: var(--coral); }
-  footer {
-    padding: 12px 32px 24px;
-    font-size: 11px;
-    color: var(--mute);
-  }
-  a { color: var(--teal); }
-  @media (max-width: 860px) {
-    main { flex-direction: column; }
-    #detail-panel { width: auto; flex: none; border-left: none; border-top: 1px solid var(--border); }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="San Diego County affordable housing program operations dashboard.">
+  <title>Housing Access | Program Operations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/styles.css">
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
+  <script src="assets/app.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
 
-<header>
-  <h1>Who's being priced out of San Diego?</h1>
-  <p class="subtitle">Economically vulnerable households by PUMA area &mdash; San Diego County Household Living Budget dataset (2024)</p>
-  <div class="stat-row" id="stat-row">
-    <div class="stat-card"><div class="value" id="stat-county-rate">&ndash;</div><div class="label">of households priced out, countywide</div></div>
-    <div class="stat-card"><div class="value" id="stat-total-vuln">&ndash;</div><div class="label">vulnerable households</div></div>
-    <div class="stat-card"><div class="value" id="stat-total-hh">&ndash;</div><div class="label">total households analyzed</div></div>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="Primary navigation">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true">HA</span>
+        <div>
+          <span class="brand-kicker">County of San Diego</span>
+          <strong>Housing Access</strong>
+        </div>
+      </div>
+
+      <nav class="nav-list">
+        <button class="nav-item" type="button" data-view="overview">
+          <span class="nav-icon" aria-hidden="true">⌂</span>
+          <span>Program overview</span>
+        </button>
+        <button class="nav-item active" type="button" data-view="applications" aria-current="page">
+          <span class="nav-icon" aria-hidden="true">▤</span>
+          <span>Applications</span>
+          <span class="nav-count" id="nav-new-count">0</span>
+        </button>
+        <button class="nav-item" type="button" data-view="mortgage">
+          <span class="nav-icon" aria-hidden="true">$</span>
+          <span>Mortgage matching</span>
+          <span class="nav-count teal-count" id="mortgage-count">0</span>
+        </button>
+        <button class="nav-item" type="button" data-view="outreach">
+          <span class="nav-icon" aria-hidden="true">◎</span>
+          <span>Outreach</span>
+          <span class="nav-count teal-count" id="outreach-count">0</span>
+        </button>
+        <button class="nav-item" type="button" data-view="map">
+          <span class="nav-icon" aria-hidden="true">◇</span>
+          <span>Site planning map</span>
+        </button>
+        <button class="nav-item" type="button" data-view="insights">
+          <span class="nav-icon" aria-hidden="true">◔</span>
+          <span>Area insights</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <div class="user-avatar" aria-hidden="true">JM</div>
+        <div>
+          <strong>Jordan Martinez</strong>
+          <span>Program reviewer</span>
+        </div>
+        <button class="icon-button light" type="button" aria-label="Account options">•••</button>
+      </div>
+    </aside>
+
+    <main id="main-content" class="main-content">
+      <header class="topbar">
+        <button class="mobile-menu" type="button" aria-label="Open navigation" aria-expanded="false">☰</button>
+        <div class="breadcrumb"><span>Housing Access</span><b>/</b><strong id="breadcrumb-current">Applications</strong></div>
+        <div class="topbar-actions">
+          <button class="icon-button" type="button" aria-label="Notifications">●</button>
+        </div>
+      </header>
+
+      <section class="view active" id="applications-view" data-view-panel="applications">
+        <div class="page-heading">
+          <div>
+            <p class="eyebrow">APPLICATION OPERATIONS</p>
+            <h1>Housing Matching &amp; Applications</h1>
+            <p>Review applicant needs, identify potential affordable housing matches, resolve missing information, and track application progress.</p>
+          </div>
+          <button class="primary-button" id="open-intake" type="button"><span aria-hidden="true">＋</span> Add application</button>
+        </div>
+
+        <div class="prototype-notice" role="note">
+          <span class="notice-icon" aria-hidden="true">i</span>
+          <div><strong>Human review required.</strong> Priority assists review order only. Final property eligibility and placement decisions use published property requirements and staff review.</div>
+          <button type="button" id="open-method">How matching works</button>
+        </div>
+
+        <div class="journey-strip" aria-label="Program workflow: Target, Match, Apply, Track">
+          <div><span>1</span><strong>Target</strong><small>Identify community need</small></div>
+          <div class="current"><span>2</span><strong>Match</strong><small>Compare property criteria</small></div>
+          <div><span>3</span><strong>Apply</strong><small>Complete property applications</small></div>
+          <div><span>4</span><strong>Track</strong><small>Follow through placement</small></div>
+        </div>
+
+        <div class="metric-grid" id="application-metrics" aria-label="Application queue summary"></div>
+
+        <div class="workspace-card">
+          <div class="queue-header">
+            <div>
+              <h2>Review queue</h2>
+              <p id="queue-summary">Loading applications…</p>
+            </div>
+            <div class="queue-actions">
+              <label class="search-field">
+                <span aria-hidden="true">⌕</span>
+                <span class="sr-only">Search applications</span>
+                <input id="application-search" type="search" placeholder="Search name or ID">
+              </label>
+              <label class="select-field">
+                <span class="sr-only">Sort applications</span>
+                <select id="sort-applications">
+                  <option value="priority">Priority: high first</option>
+                  <option value="oldest">Oldest application first</option>
+                  <option value="newest">Newest application first</option>
+                  <option value="name">Applicant name</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="filter-row" aria-label="Application filters">
+            <div class="status-tabs" role="tablist" aria-label="Filter by workflow group">
+              <button class="status-tab active" type="button" data-status="all" role="tab" aria-selected="true">All <span id="count-all">0</span></button>
+              <button class="status-tab" type="button" data-status="needs-action" role="tab" aria-selected="false">Needs action <span id="count-needs-action">0</span></button>
+              <button class="status-tab" type="button" data-status="ready" role="tab" aria-selected="false">Ready to match <span id="count-ready">0</span></button>
+              <button class="status-tab" type="button" data-status="matches" role="tab" aria-selected="false">Matches found <span id="count-matches">0</span></button>
+              <button class="status-tab" type="button" data-status="progress" role="tab" aria-selected="false">In progress <span id="count-progress">0</span></button>
+              <button class="status-tab" type="button" data-status="housed" role="tab" aria-selected="false">Housed <span id="count-housed">0</span></button>
+            </div>
+            <div class="secondary-filters">
+              <label>
+                <span class="sr-only">Filter by priority</span>
+                <select id="priority-filter">
+                  <option value="all">All priorities</option>
+                  <option value="high">High priority</option>
+                  <option value="standard">Standard review</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Filter by household size</span>
+                <select id="size-filter">
+                  <option value="all">All household sizes</option>
+                  <option value="4-5">4–5 members</option>
+                  <option value="6+">6+ members</option>
+                  <option value="1-3">1–3 members</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Filter by application stage</span>
+                <select id="stage-filter">
+                  <option value="all">All stages</option>
+                  <option value="new">New</option>
+                  <option value="needs-information">Needs information</option>
+                  <option value="ready-to-match">Ready to match</option>
+                  <option value="matches-found">Matches found</option>
+                  <option value="application-in-progress">Application in progress</option>
+                  <option value="submitted-to-property">Submitted to property</option>
+                  <option value="waitlisted">Waitlisted</option>
+                  <option value="housed">Housed</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Filter by bedroom need</span>
+                <select id="bedroom-filter">
+                  <option value="all">All bedroom needs</option>
+                  <option value="1">1 bedroom</option>
+                  <option value="2">2 bedrooms</option>
+                  <option value="3">3 bedrooms</option>
+                  <option value="4">4 bedrooms</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Filter by missing documents</span>
+                <select id="documents-filter">
+                  <option value="all">All document states</option>
+                  <option value="missing">Missing documents</option>
+                  <option value="complete">Documents complete</option>
+                </select>
+              </label>
+              <label>
+                <span class="sr-only">Filter by match status</span>
+                <select id="match-filter">
+                  <option value="all">All match results</option>
+                  <option value="likely">Likely property match</option>
+                  <option value="verification">Verification required</option>
+                  <option value="none">No current matches</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="queue-layout">
+            <div class="table-wrap">
+              <table class="application-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Applicant</th>
+                    <th scope="col">Household</th>
+                    <th scope="col">Income gap</th>
+                    <th scope="col">Housing need</th>
+                    <th scope="col">Match status</th>
+                    <th scope="col">Documents</th>
+                    <th scope="col">Priority</th>
+                  </tr>
+                </thead>
+                <tbody id="application-rows"></tbody>
+              </table>
+              <div class="empty-state" id="empty-state" hidden>
+                <span aria-hidden="true">⌕</span>
+                <h3>No applications found</h3>
+                <p>Try changing your search or filters.</p>
+                <button class="secondary-button" id="clear-filters" type="button">Clear filters</button>
+              </div>
+            </div>
+
+            <aside class="case-panel" id="case-panel" aria-label="Selected application details"></aside>
+          </div>
+        </div>
+      </section>
+
+      <section class="view" id="mortgage-view" data-view-panel="mortgage">
+        <div class="page-heading mortgage-page-heading">
+          <div>
+            <p class="eyebrow">HOMEOWNERSHIP SUPPORT</p>
+            <h1>Mortgage &amp; Purchase Assistance Matching</h1>
+            <p>Help first-time buyers with stable low-to-moderate incomes bridge the gap between a potentially sustainable mortgage and the cost of a San Diego home.</p>
+          </div>
+        </div>
+
+        <div class="prototype-notice mortgage-notice" role="note">
+          <span class="notice-icon" aria-hidden="true">i</span>
+          <div><strong>Linked to the application record.</strong> Only applicants with a recorded mortgage referral appear here. Household, income, documents, and case stage come from the main application; lenders and program staff still verify final eligibility.</div>
+          <a href="https://sdhc.org/housing-opportunities/first-time-homebuyers/" target="_blank" rel="noopener">Official SDHC guidance</a>
+        </div>
+
+        <div class="buyer-segment-strip">
+          <div><span class="segment-icon" aria-hidden="true">⌂</span><div><strong>Target buyer profile</strong><small>First-time buyers · younger-stage families · roughly 80%–150% AMI · stable income with a purchase or upfront-cash gap</small></div></div>
+          <div class="segment-tags"><span>First home</span><span>Low–moderate income</span><span>Needs an affordability bridge</span></div>
+        </div>
+
+        <div class="metric-grid" id="mortgage-metrics" aria-label="Mortgage matching summary"></div>
+
+        <div class="mortgage-workspace">
+          <aside class="buyer-list-panel" aria-label="Buyer profiles">
+            <div class="buyer-list-head">
+              <div><h2>Buyer pipeline</h2><p id="buyer-list-summary">Loading buyer profiles…</p></div>
+              <label class="compact-search"><span aria-hidden="true">⌕</span><span class="sr-only">Search buyer profiles</span><input id="buyer-search" type="search" placeholder="Search buyers"></label>
+            </div>
+            <div class="buyer-filters">
+              <label><span class="sr-only">Filter by AMI band</span><select id="buyer-ami-filter"><option value="all">Target range: 80%–150%</option><option value="80-120">80%–120% AMI</option><option value="120-150">120%–150% AMI</option><option value="outside-target">Outside target range</option></select></label>
+              <label><span class="sr-only">Filter by readiness</span><select id="buyer-readiness-filter"><option value="all">All readiness</option><option value="match-ready">Match ready</option><option value="needs-counseling">Needs counseling</option><option value="needs-preapproval">Needs preapproval</option></select></label>
+            </div>
+            <div class="buyer-list" id="buyer-list"></div>
+          </aside>
+
+          <div class="mortgage-detail" id="mortgage-buyer-detail" aria-live="polite"></div>
+        </div>
+
+        <p class="data-footnote">Each fictional buyer profile supplements one application with the same application ID. Planning estimates reserve part of the monthly housing budget for taxes, insurance, and association costs, but they are not loan estimates or underwriting results.</p>
+      </section>
+
+      <section class="view" id="map-view" data-view-panel="map">
+        <div class="page-heading compact-heading">
+          <div>
+            <p class="eyebrow">SITE PLANNING</p>
+            <h1>Where should housing and outreach be focused?</h1>
+            <p>Compare economic vulnerability and the mix of ownership-program audiences across San Diego County planning areas.</p>
+          </div>
+        </div>
+
+        <div class="metric-grid" id="map-metrics">
+          <article class="metric-card"><span>Countywide priced out</span><strong id="stat-county-rate">—</strong><small>household vulnerability rate</small></article>
+          <article class="metric-card"><span>Vulnerable households</span><strong id="stat-total-vuln">—</strong><small>modeled countywide</small></article>
+          <article class="metric-card"><span>Households analyzed</span><strong id="stat-total-hh">—</strong><small>synthetic records</small></article>
+          <article class="metric-card"><span>Planning areas</span><strong>22</strong><small>San Diego County PUMAs</small></article>
+        </div>
+
+        <div class="map-workspace">
+          <div class="map-main">
+            <div class="map-title-row">
+              <div>
+                <h2 id="map-layer-title">Modeled vulnerable households by PUMA</h2>
+                <p id="map-layer-description">Darker areas contain more modeled households below the basic-needs threshold.</p>
+              </div>
+              <label class="map-mode-field"><span>Map measure</span><select id="map-mode"><option value="vulnerable-count">Vulnerable households</option><option value="vulnerability-rate">Vulnerability rate</option></select></label>
+            </div>
+            <div id="map-status">Open this view to load Census Bureau boundaries…</div>
+            <div id="map" aria-label="Map of modeled vulnerable household counts by San Diego County PUMA"></div>
+          </div>
+          <aside class="map-detail" id="map-detail">
+            <p class="eyebrow">AREA DETAIL</p>
+            <h2 id="detail-name">Hover over a planning area</h2>
+            <div class="detail-code" id="detail-code">PUMA data</div>
+            <div class="map-stat hero-map-stat"><span id="detail-hero-label">Vulnerable households</span><strong id="detail-vuln">—</strong></div>
+            <div class="map-stat"><span id="detail-count-label">Share of modeled households</span><strong id="detail-n">—</strong></div>
+            <div class="map-stat"><span>Median household income</span><strong id="detail-income">—</strong></div>
+            <div class="map-stat"><span>Modeled required income</span><strong id="detail-hlb">—</strong></div>
+            <div class="map-stat"><span>Median annual shortfall</span><strong id="detail-gap">—</strong></div>
+            <div class="map-group-breakdown" id="detail-group-breakdown"></div>
+          </aside>
+        </div>
+        <p class="data-footnote">Household Living Budget synthetic dataset, 2024. Records represent modeled households, not identifiable people. Map color shows vulnerable household count or rate; the area sidebar adds the local mix of the six market-first outreach groups and does not imply program eligibility. PUMA boundaries are fetched from U.S. Census Bureau TIGERweb.</p>
+      </section>
+
+      <section class="view" id="insights-view" data-view-panel="insights">
+        <div class="page-heading compact-heading">
+          <div>
+            <p class="eyebrow">AREA INSIGHTS</p>
+            <h1>Which areas change when the focus is low-to-middle income?</h1>
+            <p>The site planning map ranks areas by overall economic vulnerability. These two views re-read the same county for the ownership program's low-to-middle-income audience, then look at who actually lives in the leading area.</p>
+          </div>
+        </div>
+
+        <div class="metric-grid" id="insights-metrics">
+          <article class="metric-card emphasis"><span>Leading low-to-middle income area</span><strong id="insights-top-area">—</strong><small>highest near-miss share countywide</small></article>
+          <article class="metric-card"><span>Near-miss share</span><strong id="insights-top-nearmiss">—</strong><small>of that area's vulnerable households</small></article>
+          <article class="metric-card"><span>Largest ranking change</span><strong id="insights-top-shift">—</strong><small id="insights-top-shift-note">places moved under this lens</small></article>
+          <article class="metric-card"><span>Priority tracts charted</span><strong id="insights-tract-count">—</strong><small>Census tracts with published age data</small></article>
+        </div>
+
+        <section class="insight-panel" aria-labelledby="shift-chart-title">
+          <div class="insight-panel-head">
+            <div>
+              <h2 id="shift-chart-title">Vulnerability rank compared with low-to-middle income rank</h2>
+              <p>Each point is one of San Diego County's 22 planning areas. Points below the dashed line move up in priority when areas are ranked by near-miss share instead of overall vulnerability.</p>
+            </div>
+            <div class="insight-legend">
+              <span><i class="insight-dot moved-up" aria-hidden="true"></i>Moved up under low-to-middle income focus</span>
+              <span><i class="insight-dot moved-down" aria-hidden="true"></i>Moved down</span>
+            </div>
+          </div>
+          <div class="insight-chart tall"><canvas id="shift-chart" role="img" aria-label="Scatter plot comparing each planning area's overall vulnerability rank with its low-to-middle-income priority rank."></canvas></div>
+          <p class="insight-note" id="shift-chart-status">Open this view to load the area ranking data…</p>
+          <p class="insight-caption" id="shift-chart-caption"></p>
+        </section>
+
+        <section class="insight-panel" aria-labelledby="age-chart-title">
+          <div class="insight-panel-head">
+            <div>
+              <h2 id="age-chart-title">Who the leading area reaches, by age</h2>
+              <p>Published Census age data (American Community Survey 5-Year, table S0101) for the tracts inside the leading low-to-middle income area, ordered most to least urgent by overall vulnerability priority. A tract is a neighborhood-sized area of a few thousand people; hover a bar for its countywide rank.</p>
+            </div>
+            <div class="insight-legend">
+              <span><i class="insight-dot age-young" aria-hidden="true"></i>18–24 years</span>
+              <span><i class="insight-dot age-senior" aria-hidden="true"></i>65+ years</span>
+            </div>
+          </div>
+          <div class="insight-chart"><canvas id="age-chart" role="img" aria-label="Grouped bar chart of age composition across the priority tracts of the leading low-to-middle-income planning area."></canvas></div>
+          <p class="insight-note" id="age-chart-status">Open this view to load the tract age data…</p>
+          <p class="insight-caption">Age composition informs the outreach channel — mail-leaning where the population skews older, digital-leaning where it skews younger. It is planning context for campaign design, not an eligibility rule or a statement about any household.</p>
+        </section>
+
+        <p class="data-footnote">Ranking figures come from the Household Living Budget synthetic dataset (2024); every record is a modeled household, not an identifiable person. Near-miss means a modeled income between 80% and 100% of the required amount. Age percentages are published U.S. Census Bureau estimates for real tracts and carry their own margins of error. Neither chart determines program eligibility.</p>
+      </section>
+
+      <section class="view" id="overview-view" data-view-panel="overview">
+        <div class="placeholder-page">
+          <span class="placeholder-mark" aria-hidden="true">⌂</span>
+          <p class="eyebrow">PROGRAM OVERVIEW</p>
+          <h1>One place to operate the housing program</h1>
+          <p>This area is ready for program milestones, affordable-unit inventory, property applications, placements, and outcome reporting.</p>
+          <button class="primary-button" type="button" data-go-to="applications">Review applications</button>
+        </div>
+      </section>
+
+      <section class="view" id="outreach-view" data-view-panel="outreach">
+        <div class="page-heading outreach-page-heading">
+          <div>
+            <p class="eyebrow">OUTREACH PLANNING</p>
+            <h1>Who should hear about the ownership program first?</h1>
+            <p>Find 4–5-person households with low-to-middle modeled incomes who may have a sustainable path to ownership but remain priced out by current costs.</p>
+          </div>
+        </div>
+
+        <div class="prototype-notice outreach-notice" role="note">
+          <span class="notice-icon" aria-hidden="true">i</span>
+          <div><strong>Audience planning—not a contact list.</strong> Every row is a synthetic household from the hackathon dataset. It has no name, address, phone number, email, or permission to contact. Use the patterns to plan broad community outreach.</div>
+          <button type="button" id="outreach-method">How this audience is defined</button>
+        </div>
+
+        <div class="buyer-segment-strip outreach-segment-strip">
+          <div><span class="segment-icon" aria-hidden="true">◎</span><div><strong>Market-first audience</strong><small>4–5 people · $75,000–$150,000 modeled income · below the Household Living Budget · income covers at least half of the modeled budget</small></div></div>
+          <div class="segment-tags"><span>Family-sized home</span><span>Low–middle income</span><span>Priced out, not no-income</span></div>
+        </div>
+
+        <div class="metric-grid" id="outreach-metrics" aria-label="Outreach audience summary"></div>
+
+        <section class="outreach-groups-section" aria-labelledby="outreach-groups-title">
+          <div class="section-heading-row outreach-groups-heading"><div><p class="eyebrow">AUDIENCE GROUPS</p><h2 id="outreach-groups-title">Six groups to market differently</h2><p>Each market-first household belongs to one group based on family life stage and income band. Select a group to see its sample households.</p></div><button class="text-button" type="button" data-outreach-group="all">Show all groups</button></div>
+          <div class="outreach-group-grid" id="outreach-groups"></div>
+        </section>
+
+        <div class="outreach-layout">
+          <section class="outreach-queue-card" aria-label="Synthetic outreach audience">
+            <div class="queue-header outreach-queue-header">
+              <div><h2>Households represented in these groups</h2><p id="outreach-summary">Loading synthetic household patterns…</p></div>
+            </div>
+            <div class="outreach-bulk-toolbar">
+              <div><strong id="outreach-selected-count">0 selected</strong><span>Select household patterns below to build a mailing plan.</span></div>
+              <div class="outreach-bulk-actions"><button class="primary-button" id="outreach-add-selected" type="button" disabled>Add selected to mailing plan</button><button class="text-button" id="outreach-clear-selection" type="button" disabled>Clear selection</button><label><span class="sr-only">Sort outreach audience</span><select id="outreach-sort"><option value="fit">Sort: best target fit</option><option value="gap">Sort: smallest gap</option><option value="income">Sort: highest income</option><option value="area">Sort: planning area</option></select></label></div>
+            </div>
+            <div class="outreach-table-wrap">
+              <table class="outreach-table">
+                <thead>
+                  <tr><th class="outreach-select-column" scope="col"><label><span class="sr-only">Select all visible household patterns</span><input id="outreach-select-all" type="checkbox"></label></th><th scope="col">Synthetic household</th><th scope="col">Family &amp; group</th><th scope="col">Income position</th><th scope="col">Planning area</th><th scope="col">Suggested channel</th><th scope="col">Mailing status</th></tr>
+                  <tr class="outreach-column-filters">
+                    <th></th>
+                    <th><label><span class="sr-only">Search household ID, area, or tract</span><input id="outreach-search" type="search" placeholder="Search ID or tract"><select id="outreach-tier-filter"><option value="market-first">Market first</option><option value="all">All tiers</option><option value="consider-next">Consider next</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by audience group and household size</span><select id="outreach-group-filter"><option value="all">All audience groups</option></select><select id="outreach-size-filter"><option value="all">4–5 people</option><option value="4">4 people</option><option value="5">5 people</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by income band</span><select id="outreach-income-filter"><option value="all">All income bands</option><option value="75-110">$75K–$110K</option><option value="110-150">$110K–$150K</option><option value="outside-market">Outside market-first band</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by planning area</span><select id="outreach-area-filter"><option value="all">All planning areas</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by outreach channel</span><select id="outreach-channel-filter"><option value="all">All channels</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by mailing status</span><select id="outreach-status-filter"><option value="all">All mailing statuses</option><option value="not-planned">Not on list</option><option value="campaign-ready">Mailing plan</option><option value="partner-assigned">Partner list</option></select></label></th>
+                  </tr>
+                </thead>
+                <tbody id="outreach-rows"></tbody>
+              </table>
+              <div class="empty-state compact-empty" id="outreach-empty" hidden><h3>No household patterns found</h3><p>Try changing the outreach filters.</p></div>
+            </div>
+          </section>
+
+          <aside class="outreach-insights" aria-label="Outreach planning details">
+            <section class="outreach-insight-card mailing-plan-card">
+              <div class="section-heading-row"><div><p class="eyebrow">CAMPAIGN BUILDER</p><h2>Mailing &amp; partner lists</h2></div><span id="mailing-group-count">0 groups</span></div>
+              <div class="mailing-plan-summary" id="mailing-plan-summary"></div>
+              <div class="mailing-group-list" id="mailing-group-list"></div>
+              <p class="calculation-note">This is an audience plan only. Match selected groups to consented names and addresses in an authorized government or partner contact system before sending outreach.</p>
+            </section>
+            <section class="outreach-insight-card area-focus-card">
+              <div class="section-heading-row"><div><p class="eyebrow">AREA FOCUS</p><h2>Largest modeled audiences</h2></div><span>Top 5</span></div>
+              <div id="outreach-areas" class="outreach-area-list"></div>
+            </section>
+            <section class="outreach-insight-card" id="outreach-detail" aria-live="polite"></section>
+          </aside>
+        </div>
+
+        <p class="data-footnote">Source: San Diego Household Living Budget synthetic population, 2024. Counts are modeled households and representative rows are anonymous planning examples. Audience tiers are not program eligibility, urgency, or evidence that a household can be contacted.</p>
+      </section>
+    </main>
   </div>
-</header>
 
-<div id="status">Loading PUMA boundaries from the Census Bureau (TIGERweb)&hellip;</div>
+  <dialog id="intake-dialog" class="app-dialog">
+    <form id="intake-form" method="dialog">
+      <div class="dialog-header">
+        <div>
+          <p class="eyebrow">MANUAL INTAKE</p>
+          <h2>Add an application</h2>
+          <p>Create a queue record from a paper, phone, or assisted application.</p>
+        </div>
+        <button class="dialog-close" type="button" data-close-dialog="intake-dialog" aria-label="Close">×</button>
+      </div>
 
-<main>
-  <div id="map-container"><div id="map"></div></div>
-  <div id="detail-panel">
-    <h2 id="detail-name">Hover a PUMA area</h2>
-    <div class="puma-code" id="detail-code">&nbsp;</div>
-    <div class="metric">
-      <div class="m-value coral" id="detail-vuln">&ndash;</div>
-      <div class="m-label">% of households priced out (economically vulnerable)</div>
+      <div class="form-section">
+        <h3>Applicant and household</h3>
+        <div class="form-grid">
+          <label class="full-field">Applicant name<input name="applicant" autocomplete="name" required placeholder="Full name"></label>
+          <label>Adults<input name="adults" type="number" min="1" max="8" value="2" required></label>
+          <label>Children<input name="children" type="number" min="0" max="10" value="2" required></label>
+          <label>Youngest child age<input name="youngestChild" type="number" min="0" max="18" value="5"></label>
+          <label>Preferred language
+            <select name="language"><option>English</option><option>Spanish</option><option>Tagalog</option><option>Vietnamese</option><option>Arabic</option></select>
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Income and housing need</h3>
+        <div class="form-grid">
+          <label>Annual household income<input name="income" type="number" min="0" step="500" value="42000" required></label>
+          <label>Modeled annual HLB<input name="hlb" type="number" min="1" step="500" value="118000" required></label>
+          <label>Current housing situation
+            <select name="housing" required>
+              <option value="eviction">Eviction or move-out notice</option>
+              <option value="unhoused">Currently unhoused</option>
+              <option value="temporary">Temporary or doubled-up housing</option>
+              <option value="severe-burden">Severe housing-cost burden</option>
+              <option value="stable">Stable current housing</option>
+            </select>
+          </label>
+          <label>Bedroom requirement
+            <select name="bedrooms" required><option value="1">1 bedroom</option><option value="2">2 bedrooms</option><option value="3" selected>3 bedrooms</option><option value="4">4 bedrooms</option></select>
+          </label>
+          <label class="full-field">Planning area
+            <select name="puma" required>
+              <option value="07330">Chula Vista (West) &amp; National City</option>
+              <option value="07327">San Diego City SE (Encanto &amp; Skyline)</option>
+              <option value="07322">South San Diego / Otay Mesa &amp; South Bay</option>
+              <option value="07317">Mid-City (City Heights area)</option>
+              <option value="07313">El Cajon &amp; Santee</option>
+            </select>
+          </label>
+        </div>
+      </div>
+
+      <div class="eligibility-preview" aria-live="polite">
+        <div><span>Initial workflow recommendation</span><strong id="intake-eligibility-label">Collect required documents</strong></div>
+        <span class="check-orb" id="intake-checks">0/9</span>
+      </div>
+
+      <div class="dialog-actions">
+        <button class="secondary-button" type="button" data-close-dialog="intake-dialog">Cancel</button>
+        <button class="primary-button" type="submit">Add to review queue</button>
+      </div>
+    </form>
+  </dialog>
+
+  <dialog id="method-dialog" class="app-dialog method-dialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">HUMAN-REVIEWED MATCHING</p>
+        <h2>How matching and priority work</h2>
+        <p>The dashboard keeps review priority separate from property eligibility.</p>
+      </div>
+      <button class="dialog-close" type="button" data-close-dialog="method-dialog" aria-label="Close">×</button>
     </div>
-    <div class="metric">
-      <div class="m-value" id="detail-n">&ndash;</div>
-      <div class="m-label">households vulnerable / total sampled</div>
+    <div class="method-list">
+      <article><strong>01</strong><div><h3>Priority supports review order</h3><p>Financial gap, housing instability, household needs, and time waiting can flag a case for earlier staff attention. The category never determines placement.</p></div></article>
+      <article><strong>02</strong><div><h3>Properties have separate rules</h3><p>Potential matches compare household income, household size, bedroom need, location preference, and published property requirements.</p></div></article>
+      <article><strong>03</strong><div><h3>Missing evidence stays visible</h3><p>A promising match is labeled “verification required” when documents needed by the property are missing.</p></div></article>
+      <article><strong>04</strong><div><h3>Staff decide every next step</h3><p>Staff review the source information, contact the applicant, confirm property rules, and submit applications.</p></div></article>
     </div>
-    <div class="metric">
-      <div class="m-value" id="detail-income">&ndash;</div>
-      <div class="m-label">median household income</div>
+    <div class="guardrail-box"><strong>AI assistance guardrails</strong><p>Automation may summarize cases, identify missing documents, and compare applicant information with published property criteria. It does not approve, deny, or independently decide who deserves housing. HLB is context for affordability need—not a final property eligibility rule.</p></div>
+    <div class="dialog-actions"><button class="primary-button" type="button" data-close-dialog="method-dialog">Got it</button></div>
+  </dialog>
+
+  <dialog id="outreach-method-dialog" class="app-dialog method-dialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">TRANSPARENT AUDIENCE LOGIC</p>
+        <h2>How outreach priority works</h2>
+        <p>The audience is based on program fit, not emergency need or individual eligibility.</p>
+      </div>
+      <button class="dialog-close" type="button" data-close-dialog="outreach-method-dialog" aria-label="Close">×</button>
     </div>
-    <div class="metric">
-      <div class="m-value" id="detail-hlb">&ndash;</div>
-      <div class="m-label">median required income (HLB)</div>
+    <div class="method-list">
+      <article><strong>01</strong><div><h3>Start with family-sized households</h3><p>Market first includes synthetic households with exactly four or five members, matching the program's family-sized ownership units.</p></div></article>
+      <article><strong>02</strong><div><h3>Focus on low–middle modeled income</h3><p>The planning band is $75,000–$150,000 per year. It is a campaign assumption for this prototype, not an official AMI or eligibility limit.</p></div></article>
+      <article><strong>03</strong><div><h3>Look for a realistic affordability bridge</h3><p>Income must be below the modeled Household Living Budget but cover at least half of it. This avoids treating no-income households as the primary ownership-marketing audience.</p></div></article>
+      <article><strong>04</strong><div><h3>Group households for different campaigns</h3><p>Market-first households are divided into six mutually exclusive groups using child age bands and two income ranges. Each group receives a different broad channel and message; none identifies or authorizes contact with a real household.</p></div></article>
     </div>
-    <div class="metric">
-      <div class="m-value teal" id="detail-gap">&ndash;</div>
-      <div class="m-label">median annual gap, vulnerable households</div>
-    </div>
-  </div>
-</main>
+    <div class="guardrail-box"><strong>Important limitation</strong><p>The hackathon data contains synthetic household IDs and modeled geography only. The dashboard supports area and channel planning; actual outreach must use consented government or partner contact systems and comply with program policy.</p></div>
+    <div class="dialog-actions"><button class="primary-button" type="button" data-close-dialog="outreach-method-dialog">Got it</button></div>
+  </dialog>
 
-<!-- Rank-shift scatter chart. Reads data/low_mid_income_priority.json -->
-
-<section style="padding: 12px 32px 32px;">
-  <h2 style="font-size: 18px; font-weight: 600; margin: 24px 0 4px;">
-    Vulnerability rank vs. low-mid income rank
-  </h2>
-  <p style="font-size: 14px; color: var(--sub, #5f5e5a); margin: 0 0 16px; max-width: 760px;">
-    Each dot is one of San Diego's 22 PUMAs. Dots below the dashed line moved up in priority when
-    ranked by near-miss share instead of overall vulnerability.
-  </p>
-  <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--sub, #5f5e5a);">
-    <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #2a78d6;"></span>Moved up under low-mid focus</span>
-    <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 50%; background: #c3c2b7;"></span>Moved down</span>
-  </div>
-  <div style="position: relative; width: 100%; height: 460px;">
-    <canvas id="shiftChart" role="img" aria-label="Scatter plot comparing each PUMA's vulnerability rank against its low-mid income priority rank."></canvas>
-  </div>
-  <p style="font-size: 13px; color: var(--sub, #5f5e5a); margin-top: 8px; max-width: 760px;">
-    Rancho Bernardo & Poway (highlighted) is the closest to self-sufficient overall &mdash; the
-    highest share of near-miss households of any PUMA &mdash; making it our target for a low-mid
-    income program.
-  </p>
-  <p id="shift-chart-status" style="font-size: 13px; color: var(--sub, #5f5e5a); margin-top: 8px;"></p>
-</section>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script>
-(async function () {
-  const statusEl = document.getElementById('shift-chart-status');
-  let pumas;
-  try {
-    const resp = await fetch('data/low_mid_income_priority.json');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const data = await resp.json();
-    pumas = data.pumas;
-  } catch (err) {
-    statusEl.textContent = 'Could not load data/low_mid_income_priority.json (' + err.message + ').';
-    return;
-  }
-
-  const maxRank = pumas.length;
-  const points = pumas.map(p => ({
-    x: p.vulnerability_rank,
-    y: p.low_mid_priority_rank,
-    name: p.puma_name,
-  }));
-  const colors = pumas.map(p => p.low_mid_priority_rank < p.vulnerability_rank ? '#2a78d6' : '#c3c2b7');
-  const radii = pumas.map(p =>
-    (p.puma_name.includes('Rancho Bernardo') || p.puma_name.includes('Chula Vista (West)')) ? 9 : 5
-  );
-
-  new Chart(document.getElementById('shiftChart'), {
-    type: 'scatter',
-    data: {
-      datasets: [
-        {
-          label: 'Reference (no change)', type: 'line',
-          data: [{ x: 1, y: 1 }, { x: maxRank, y: maxRank }],
-          borderColor: '#c3c2b7', borderDash: [4, 4], borderWidth: 1, pointRadius: 0, order: 1
-        },
-        { label: 'PUMAs', data: points, backgroundColor: colors, pointRadius: radii, order: 0 }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            label: (item) => {
-              if (item.dataset.label === 'Reference (no change)') return '';
-              const p = item.raw;
-              return [p.name, 'Vulnerability rank #' + p.x, 'Low-mid priority rank #' + p.y];
-            }
-          }
-        }
-      },
-      scales: {
-        x: { title: { display: true, text: 'Vulnerability rank (1 = worst overall)' }, min: 0, max: maxRank + 1 },
-        y: { title: { display: true, text: 'Low-mid income priority rank (1 = best target)' }, min: 0, max: maxRank + 1 }
-      }
-    }
-  });
-})();
-</script>
-
-<!-- Age demographics chart. Reads data/tract_age_demographics.json -- generated by scripts/fetch_age_demographics.py. -->
-
-<section style="padding: 12px 32px 32px;">
-  <h2 style="font-size: 18px; font-weight: 600; margin: 24px 0 4px;">
-    Rancho Bernardo & Poway: who are we reaching, by age?
-  </h2>
-  <p style="font-size: 14px; color: var(--sub, #5f5e5a); margin: 0 0 16px; max-width: 760px;">
-    Real Census age data (ACS 5-Year, table S0101) for Rancho Bernardo & Poway's tracts &mdash;
-    our #1 priority area for a low-mid income program (highest share of "near-miss" households,
-    close to self-sufficient). Shows what share of each tract's population is young adult (18-24)
-    vs. senior (65+).
-  </p>
-  <p style="font-size: 12px; color: var(--sub, #5f5e5a); margin: 0 0 16px; max-width: 760px;">
-    A census tract is a small neighborhood-sized area (usually a few thousand people). Tracts
-    below are ordered most to least urgent by overall vulnerability priority (hover a bar for each
-    tract's exact countywide rank out of 732).
-  </p>
-  <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 8px; font-size: 12px; color: var(--sub, #5f5e5a);">
-    <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #2a78d6;"></span>18-24 years (%)</span>
-    <span style="display: flex; align-items: center; gap: 4px;"><span style="width: 10px; height: 10px; border-radius: 2px; background: #eb6834;"></span>65+ years (%)</span>
-  </div>
-  <div style="position: relative; width: 100%; height: 420px;">
-    <canvas id="ageChart" role="img" aria-label="Grouped bar chart of age composition across Rancho Bernardo and Poway priority tracts."></canvas>
-  </div>
-  <p id="age-chart-status" style="font-size: 13px; color: var(--sub, #5f5e5a); margin-top: 8px;"></p>
-</section>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
-<script>
-(async function () {
-  const statusEl = document.getElementById('age-chart-status');
-  let rows;
-  try {
-    const resp = await fetch('data/tract_age_demographics.json');
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    rows = await resp.json();
-  } catch (err) {
-    statusEl.textContent = 'Could not load data/tract_age_demographics.json (' + err.message + '). ' +
-      'Make sure the file is in the data/ folder and you are viewing this via ' +
-      'http://localhost:8000, not opened directly as a file.';
-    return;
-  }
-
-  rows = rows.slice().sort((a, b) => a.priority_rank - b.priority_rank).slice(0, 15);
-
-  const labels = rows.map((r, i) => 'Tract ' + (i + 1));
-  const age1824 = rows.map(r => r.pct_age_18_24);
-  const age65p = rows.map(r => r.pct_age_65_plus);
-  const vulnRate = rows.map(r => r.vulnerability_rate);
-  const nVuln = rows.map(r => r.n_vulnerable);
-  const countyRank = rows.map(r => r.priority_rank);
-
-  new Chart(document.getElementById('ageChart'), {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        { label: '18-24 years (%)', data: age1824, backgroundColor: '#2a78d6', borderRadius: 3 },
-        { label: '65+ years (%)', data: age65p, backgroundColor: '#eb6834', borderRadius: 3 }
-      ]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          callbacks: {
-            afterBody: (items) => {
-              const i = items[0].dataIndex;
-              return `Countywide priority rank: #${countyRank[i]} of 732 tracts\n` +
-                     `${vulnRate[i]}% of households here are economically vulnerable\n` +
-                     `${nVuln[i].toLocaleString()} vulnerable households in this tract`;
-            }
-          }
-        }
-      },
-      scales: {
-        y: { ticks: { callback: v => v + '%' }, title: { display: true, text: '% of population', font: { size: 11 } } }
-      }
-    }
-  });
-})();
-</script>
-
-<footer>
-  Household Living Budget synthetic dataset, San Diego HLB Hackathon 2024. PUMA boundaries: U.S. Census
-  Bureau TIGERweb (2020 vintage), fetched live from
-  <a href="https://tigerweb.geo.census.gov/" target="_blank" rel="noopener">tigerweb.geo.census.gov</a>.
-  Every row in the source data is a synthetic household &mdash; valid for distributions and patterns, not individual cases.
-</footer>
-
-<script>
-const STATUS_EL = document.getElementById('status');
-
-function setStatus(msg, isError) {
-  STATUS_EL.textContent = msg;
-  STATUS_EL.className = isError ? 'error' : '';
-}
-
-function fmtPct(v) { return v.toFixed(1) + '%'; }
-function fmtMoney(v) { return '$' + Math.round(v).toLocaleString(); }
-function fmtInt(v) { return Math.round(v).toLocaleString(); }
-
-async function main() {
-  let statsResp, statsData;
-  try {
-    statsResp = await fetch('data/puma_stats.json');
-    if (!statsResp.ok) throw new Error('HTTP ' + statsResp.status);
-    statsData = await statsResp.json();
-  } catch (err) {
-    setStatus(
-      'Could not load data/puma_stats.json (' + err.message + '). ' +
-      'If you opened this file directly (file://), most browsers block local fetches ' +
-      '\u2014 serve the folder instead, e.g. `python -m http.server` and open http://localhost:8000, ' +
-      'or use GitHub Pages.',
-      true
-    );
-    return;
-  }
-
-  const pumas = statsData.pumas;
-  const byCode = {};
-  pumas.forEach(p => { byCode[p.puma_code] = p; });
-
-  document.getElementById('stat-county-rate').textContent = fmtPct(statsData.county_summary.county_vulnerability_rate);
-  document.getElementById('stat-total-vuln').textContent = fmtInt(statsData.county_summary.total_vulnerable);
-  document.getElementById('stat-total-hh').textContent = fmtInt(statsData.county_summary.total_households);
-
-  const pumaCodes = pumas.map(p => p.puma_code);
-  const whereClause = "STATE='06' AND PUMA IN (" + pumaCodes.map(c => `'${c}'`).join(',') + ")";
-  const geoUrl = 'https://tigerweb.geo.census.gov/arcgis/rest/services/TIGERweb/PUMA_TAD_TAZ_UGA_ZCTA/MapServer/0/query'
-    + '?where=' + encodeURIComponent(whereClause)
-    + '&outFields=STATE,PUMA,BASENAME,NAME,GEOID'
-    + '&returnGeometry=true&outSR=4326&f=geojson';
-
-  let geojson;
-  try {
-    const geoResp = await fetch(geoUrl);
-    if (!geoResp.ok) throw new Error('HTTP ' + geoResp.status);
-    geojson = await geoResp.json();
-    if (!geojson.features || geojson.features.length === 0) throw new Error('No PUMA features returned');
-  } catch (err) {
-    setStatus(
-      'Could not load PUMA boundaries from the Census Bureau TIGERweb service (' + err.message + '). ' +
-      'This requires an internet connection and an unblocked connection to tigerweb.geo.census.gov ' +
-      '(corporate/campus wifi sometimes blocks it). Try a different network, or download the GeoJSON ' +
-      'once and swap the fetch for a local file \u2014 see README.md.',
-      true
-    );
-    return;
-  }
-
-  setStatus('');
-
-  const locations = geojson.features.map(f => f.properties.PUMA);
-  const z = locations.map(code => (byCode[code] ? byCode[code].vulnerability_rate : null));
-  const hoverText = locations.map(code => {
-    const p = byCode[code];
-    if (!p) return 'No data';
-    return `<b>${p.puma_name}</b><br>` +
-           `PUMA ${p.puma_code}<br>` +
-           `<b>${fmtPct(p.vulnerability_rate)}</b> priced out<br>` +
-           `${fmtInt(p.n_vulnerable)} of ${fmtInt(p.n_households)} households<br>` +
-           `Median income: ${fmtMoney(p.median_income)}<br>` +
-           `Median required income: ${fmtMoney(p.median_hlb_year)}`;
-  });
-
-  const trace = {
-    type: 'choroplethmapbox',
-    geojson: geojson,
-    locations: locations,
-    z: z,
-    featureidkey: 'properties.PUMA',
-    colorscale: [
-      [0, '#e6f1fb'], [0.25, '#85b7eb'], [0.5, '#f0997b'], [0.75, '#d85a30'], [1, '#791f1f']
-    ],
-    zmin: 0,
-    zmax: 70,
-    marker: { line: { width: 1.2, color: '#ffffff' }, opacity: 0.85 },
-    text: hoverText,
-    hoverinfo: 'text',
-    colorbar: {
-      title: { text: '% priced out', side: 'right' },
-      ticksuffix: '%',
-      thickness: 14,
-    },
-  };
-
-  const layout = {
-    mapbox: {
-      style: 'open-street-map',
-      center: { lat: 33.02, lon: -116.9 },
-      zoom: 8.2,
-    },
-    margin: { l: 0, r: 0, t: 0, b: 0 },
-  };
-
-  Plotly.newPlot('map', [trace], layout, { responsive: true, displayModeBar: false });
-
-  const mapDiv = document.getElementById('map');
-
-  function showDetail(code) {
-    const p = byCode[code];
-    if (!p) return;
-    document.getElementById('detail-name').textContent = p.puma_name;
-    document.getElementById('detail-code').textContent = 'PUMA ' + p.puma_code;
-    document.getElementById('detail-vuln').textContent = fmtPct(p.vulnerability_rate);
-    document.getElementById('detail-n').textContent = fmtInt(p.n_vulnerable) + ' / ' + fmtInt(p.n_households);
-    document.getElementById('detail-income').textContent = fmtMoney(p.median_income);
-    document.getElementById('detail-hlb').textContent = fmtMoney(p.median_hlb_year);
-    document.getElementById('detail-gap').textContent = fmtMoney(p.median_gap_vulnerable) + ' / yr';
-  }
-
-  mapDiv.on('plotly_hover', (evt) => {
-    const code = evt.points[0].location;
-    showDetail(code);
-  });
-}
-
-main();
-</script>
-
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

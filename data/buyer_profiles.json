@@ -1,0 +1,10 @@
+[
+  { "applicationId": "HA-260211", "amiPercent": 92, "savings": 28000, "monthlyDebt": 650, "creditBand": "680–719", "targetPrice": 650000, "firstTimeBuyer": true, "educationComplete": false, "preapproval": "in-progress", "employmentYears": 4 },
+  { "applicationId": "HA-260191", "amiPercent": 82, "savings": 18000, "monthlyDebt": 420, "creditBand": "640–679", "targetPrice": 575000, "firstTimeBuyer": true, "educationComplete": false, "preapproval": "not-started", "employmentYears": 3 },
+  { "applicationId": "HA-260207", "amiPercent": 108, "savings": 45000, "monthlyDebt": 1100, "creditBand": "720+", "targetPrice": 700000, "firstTimeBuyer": true, "educationComplete": true, "preapproval": "complete", "employmentYears": 6 },
+  { "applicationId": "HA-260215", "amiPercent": 118, "savings": 60000, "monthlyDebt": 1800, "creditBand": "720+", "targetPrice": 750000, "firstTimeBuyer": true, "educationComplete": true, "preapproval": "in-progress", "employmentYears": 5 },
+  { "applicationId": "HA-260223", "amiPercent": 88, "savings": 25000, "monthlyDebt": 750, "creditBand": "680–719", "targetPrice": 650000, "firstTimeBuyer": true, "educationComplete": false, "preapproval": "not-started", "employmentYears": 4 },
+  { "applicationId": "HA-260220", "amiPercent": 132, "savings": 70000, "monthlyDebt": 2200, "creditBand": "720+", "targetPrice": 850000, "firstTimeBuyer": true, "educationComplete": true, "preapproval": "complete", "employmentYears": 7 },
+  { "applicationId": "HA-260227", "amiPercent": 96, "savings": 40000, "monthlyDebt": 900, "creditBand": "680–719", "targetPrice": 650000, "firstTimeBuyer": true, "educationComplete": true, "preapproval": "in-progress", "employmentYears": 3 },
+  { "applicationId": "HA-260196", "amiPercent": 84, "savings": 22000, "monthlyDebt": 1300, "creditBand": "640–679", "targetPrice": 600000, "firstTimeBuyer": true, "educationComplete": false, "preapproval": "not-started", "employmentYears": 2 }
+]

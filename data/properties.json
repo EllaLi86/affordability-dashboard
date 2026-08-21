@@ -1,0 +1,74 @@
+[
+  {
+    "id": "PROP-101",
+    "name": "Harbor View Apartments",
+    "location": "National City",
+    "pumas": ["07330"],
+    "bedrooms": 3,
+    "incomeLimit": 90000,
+    "minHousehold": 3,
+    "maxHousehold": 6,
+    "ageRestriction": null,
+    "availability": "Waitlist open"
+  },
+  {
+    "id": "PROP-102",
+    "name": "Mission Terrace",
+    "location": "Southeastern San Diego",
+    "pumas": ["07327"],
+    "bedrooms": 2,
+    "incomeLimit": 76000,
+    "minHousehold": 2,
+    "maxHousehold": 4,
+    "ageRestriction": null,
+    "availability": "Applications open"
+  },
+  {
+    "id": "PROP-103",
+    "name": "Parkside Homes",
+    "location": "City Heights",
+    "pumas": ["07317"],
+    "bedrooms": 3,
+    "incomeLimit": 98000,
+    "minHousehold": 3,
+    "maxHousehold": 6,
+    "ageRestriction": null,
+    "availability": "Waitlist open"
+  },
+  {
+    "id": "PROP-104",
+    "name": "South Bay Family Residences",
+    "location": "Otay Mesa",
+    "pumas": ["07322"],
+    "bedrooms": 4,
+    "incomeLimit": 125000,
+    "minHousehold": 4,
+    "maxHousehold": 8,
+    "ageRestriction": null,
+    "availability": "Opening soon"
+  },
+  {
+    "id": "PROP-105",
+    "name": "East County Commons",
+    "location": "El Cajon",
+    "pumas": ["07313"],
+    "bedrooms": 3,
+    "incomeLimit": 93000,
+    "minHousehold": 3,
+    "maxHousehold": 6,
+    "ageRestriction": null,
+    "availability": "Applications open"
+  },
+  {
+    "id": "PROP-106",
+    "name": "Bayview Courtyard",
+    "location": "Chula Vista",
+    "pumas": ["07329", "07330"],
+    "bedrooms": 3,
+    "incomeLimit": 105000,
+    "minHousehold": 3,
+    "maxHousehold": 6,
+    "ageRestriction": null,
+    "availability": "Waitlist open"
+  }
+]
