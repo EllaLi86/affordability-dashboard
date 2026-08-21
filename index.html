@@ -280,28 +280,27 @@
           <div class="map-main">
             <div class="map-title-row">
               <div>
-                <h2 id="map-layer-title">Largest outreach group by PUMA</h2>
-                <p id="map-layer-description">Each area is colored by its largest market-first audience group; the detail panel shows the full local mix.</p>
+                <h2 id="map-layer-title">Modeled vulnerable households by PUMA</h2>
+                <p id="map-layer-description">Darker areas contain more modeled households below the basic-needs threshold.</p>
               </div>
-              <label class="map-mode-field"><span>Map layer</span><select id="map-mode"><option value="outreach-groups">Dominant outreach group</option><option value="vulnerability">Housing need</option></select></label>
+              <label class="map-mode-field"><span>Map measure</span><select id="map-mode"><option value="vulnerable-count">Vulnerable households</option><option value="vulnerability-rate">Vulnerability rate</option></select></label>
             </div>
             <div id="map-status">Open this view to load Census Bureau boundaries…</div>
-            <div class="map-group-legend" id="map-group-legend" aria-label="Outreach group legend" hidden></div>
-            <div id="map" aria-label="Map of the largest ownership-program outreach group by San Diego County PUMA"></div>
+            <div id="map" aria-label="Map of modeled vulnerable household counts by San Diego County PUMA"></div>
           </div>
           <aside class="map-detail" id="map-detail">
             <p class="eyebrow">AREA DETAIL</p>
             <h2 id="detail-name">Hover over a planning area</h2>
             <div class="detail-code" id="detail-code">PUMA data</div>
-            <div class="map-stat hero-map-stat"><span id="detail-hero-label">Households priced out</span><strong id="detail-vuln">—</strong></div>
-            <div class="map-stat"><span id="detail-count-label">Vulnerable / modeled</span><strong id="detail-n">—</strong></div>
+            <div class="map-stat hero-map-stat"><span id="detail-hero-label">Vulnerable households</span><strong id="detail-vuln">—</strong></div>
+            <div class="map-stat"><span id="detail-count-label">Share of modeled households</span><strong id="detail-n">—</strong></div>
             <div class="map-stat"><span>Median household income</span><strong id="detail-income">—</strong></div>
             <div class="map-stat"><span>Modeled required income</span><strong id="detail-hlb">—</strong></div>
             <div class="map-stat"><span>Median annual shortfall</span><strong id="detail-gap">—</strong></div>
             <div class="map-group-breakdown" id="detail-group-breakdown"></div>
           </aside>
         </div>
-        <p class="data-footnote">Household Living Budget synthetic dataset, 2024. Records represent modeled households, not identifiable people. The dominant outreach layer shows the largest of the six market-first groups in each PUMA; it does not imply a majority or program eligibility. PUMA boundaries are fetched from U.S. Census Bureau TIGERweb.</p>
+        <p class="data-footnote">Household Living Budget synthetic dataset, 2024. Records represent modeled households, not identifiable people. Map color shows vulnerable household count or rate; the area sidebar adds the local mix of the six market-first outreach groups and does not imply program eligibility. PUMA boundaries are fetched from U.S. Census Bureau TIGERweb.</p>
       </section>
 
       <section class="view" id="overview-view" data-view-panel="overview">

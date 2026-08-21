@@ -556,11 +556,7 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
 .map-mode-field select { width: 100%; height: 34px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--slate); padding: 0 28px 0 9px; font-size: 10px; font-weight: 700; }
 #map-status { min-height: 22px; color: var(--muted); font-size: 11px; }
 #map-status.error { color: var(--red-700); }
-.map-group-legend { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px 10px; margin: 2px 0 8px; border: 1px solid var(--line-soft); border-radius: 6px; background: #fbfcfc; padding: 8px 10px; }
-.map-group-legend[hidden] { display: none; }
-.map-legend-item { display: flex; align-items: center; min-width: 0; gap: 6px; color: var(--slate); font-size: 8px; }
 .map-color-dot { width: 8px; height: 8px; flex: 0 0 8px; border-radius: 50%; }
-.map-legend-item span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 #map { width: 100%; height: 545px; }
 .map-detail { border-left: 1px solid var(--line); background: #fbfcfc; padding: 22px; }
 .map-detail h2 { margin-bottom: 3px; font-size: 17px; }
@@ -569,7 +565,6 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
 .map-stat span { color: var(--muted); font-size: 10px; }
 .map-stat strong { color: var(--navy-950); font-family: var(--font-display); font-size: 17px; }
 .hero-map-stat strong { color: var(--orange-600); font-size: 28px; }
-.map-detail.group-mode .hero-map-stat strong { color: var(--teal-700); font-size: 18px; line-height: 1.25; }
 .map-group-breakdown { margin-top: 18px; }
 .map-group-breakdown-head { margin-bottom: 9px; }
 .map-group-breakdown-head h3 { margin: 2px 0; color: var(--navy-950); font-size: 12px; }
@@ -912,7 +907,6 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
   .case-scroll { max-height: none; }
   .map-workspace { grid-template-columns: 1fr; }
   .map-detail { border-top: 1px solid var(--line); border-left: 0; }
-  .map-group-legend { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .mortgage-workspace { grid-template-columns: 1fr; }
   .buyer-list-panel { border-right: 0; border-bottom: 1px solid var(--line); }
   .buyer-filters { grid-template-columns: 1fr 1fr; }

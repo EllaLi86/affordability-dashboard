@@ -38,7 +38,7 @@ const state = {
   outreachStatuses: {},
   outreachCampaignGroups: [],
   mapLoaded: false,
-  mapMode: "outreach-groups",
+  mapMode: "vulnerable-count",
   mapContext: null,
   selectedMapPuma: null,
   toastTimer: null,
@@ -51,15 +51,6 @@ const outreachGroupColors = {
   "school-moderate": "#9a6f2e",
   "adult-emerging": "#665283",
   "adult-moderate": "#60717d",
-};
-
-const outreachGroupMapLabels = {
-  "young-emerging": "Young · $75K–$110K",
-  "school-emerging": "School-age · $75K–$110K",
-  "young-moderate": "Young · $110K–$150K",
-  "school-moderate": "School-age · $110K–$150K",
-  "adult-emerging": "Adults · $75K–$110K",
-  "adult-moderate": "Adults · $110K–$150K",
 };
 
 const statusLabels = {
@@ -1261,6 +1252,7 @@ function getOutreachArea(code) {
 
 function getMapTrace() {
   const { geojson, locations, byCode } = state.mapContext;
+  const countMode = state.mapMode === "vulnerable-count";
   const baseTrace = {
     type: "choroplethmapbox",
     geojson,
@@ -1269,77 +1261,43 @@ function getMapTrace() {
     marker: { line: { width: 1.1, color: "#ffffff" }, opacity: 0.88 },
     hoverinfo: "text",
   };
-
-  if (state.mapMode === "outreach-groups") {
-    const segments = state.outreachData.segments;
-    const segmentIndexes = Object.fromEntries(segments.map((segment, index) => [segment.id, index]));
-    const colorscale = segments.flatMap((segment, index) => {
-      const color = outreachGroupColors[segment.id];
-      return [[index / segments.length, color], [(index + 1) / segments.length, color]];
-    });
-    return {
-      ...baseTrace,
-      z: locations.map((code) => segmentIndexes[getOutreachArea(code)?.dominantSegmentId] ?? null),
-      zmin: -0.5,
-      zmax: segments.length - 0.5,
-      colorscale,
-      showscale: false,
-      text: locations.map((code) => {
-        const area = getOutreachArea(code);
-        if (!area) return "No outreach data";
-        return `<b>${escapeHtml(area.name)}</b><br>PUMA ${escapeHtml(area.puma)}<br><b>${escapeHtml(area.dominantSegmentName)}</b><br>${formatNumber(area.dominantSegmentCount)} households · ${area.dominantSegmentShare.toFixed(1)}% of area target<br>${formatNumber(area.marketFirst)} total market-first households`;
-      }),
-    };
-  }
-
+  const values = locations.map((code) => {
+    const puma = byCode[code];
+    if (!puma) return null;
+    return countMode ? puma.n_vulnerable : puma.vulnerability_rate;
+  });
   return {
     ...baseTrace,
-    z: locations.map((code) => byCode[code]?.vulnerability_rate ?? null),
+    z: values,
     text: locations.map((code) => {
       const puma = byCode[code];
       if (!puma) return "No data";
-      return `<b>${escapeHtml(puma.puma_name)}</b><br>PUMA ${escapeHtml(puma.puma_code)}<br><b>${puma.vulnerability_rate.toFixed(1)}%</b> priced out<br>${formatNumber(puma.n_vulnerable)} of ${formatNumber(puma.n_households)} households<br>Median income: ${formatMoney(puma.median_income)}<br>Modeled required income: ${formatMoney(puma.median_hlb_year)}`;
+      return `<b>${escapeHtml(puma.puma_name)}</b><br>PUMA ${escapeHtml(puma.puma_code)}<br><b>${formatNumber(puma.n_vulnerable)} vulnerable households</b><br>${puma.vulnerability_rate.toFixed(1)}% of ${formatNumber(puma.n_households)} modeled households<br>Median income: ${formatMoney(puma.median_income)}<br>Modeled required income: ${formatMoney(puma.median_hlb_year)}`;
     }),
     colorscale: [[0, "#deecea"], [0.25, "#8fc9c3"], [0.5, "#f0b490"], [0.75, "#d56a3a"], [1, "#8f332f"]],
     zmin: 0,
-    zmax: 70,
-    colorbar: { title: { text: "% priced out", side: "right" }, ticksuffix: "%", thickness: 13, len: 0.75 },
+    zmax: countMode ? Math.max(...values.filter(Number.isFinite)) : 70,
+    colorbar: countMode
+      ? { title: { text: "Vulnerable<br>households", side: "right" }, tickformat: ",", thickness: 13, len: 0.75 }
+      : { title: { text: "% priced out", side: "right" }, ticksuffix: "%", thickness: 13, len: 0.75 },
   };
-}
-
-function renderMapGroupLegend() {
-  const legend = document.getElementById("map-group-legend");
-  if (!state.outreachData) {
-    legend.innerHTML = "";
-    return;
-  }
-  legend.innerHTML = state.outreachData.segments.map((segment) => `
-    <div class="map-legend-item" title="${escapeHtml(segment.name)}">
-      <span class="map-color-dot" style="background:${outreachGroupColors[segment.id]}"></span>
-      <span>${escapeHtml(outreachGroupMapLabels[segment.id])}</span>
-    </div>
-  `).join("");
 }
 
 async function renderMapMode(useNewPlot = false) {
   if (!state.mapContext) return;
-  const groupMode = state.mapMode === "outreach-groups";
-  document.getElementById("map-layer-title").textContent = groupMode
-    ? "Largest outreach group by PUMA"
-    : "Household vulnerability by PUMA";
-  document.getElementById("map-layer-description").textContent = groupMode
-    ? "Each area is colored by its largest market-first audience group; the detail panel shows the full local mix."
-    : "Higher percentages indicate a larger share of households below the modeled basic-needs threshold.";
+  const countMode = state.mapMode === "vulnerable-count";
+  document.getElementById("map-layer-title").textContent = countMode
+    ? "Modeled vulnerable households by PUMA"
+    : "Household vulnerability rate by PUMA";
+  document.getElementById("map-layer-description").textContent = countMode
+    ? "Darker areas contain more modeled households below the basic-needs threshold."
+    : "Darker areas have a larger share of modeled households below the basic-needs threshold.";
   const statusElement = document.getElementById("map-status");
   statusElement.className = "";
-  statusElement.textContent = groupMode
-    ? "Dominant means the largest of six audience groups in the area—not necessarily a majority."
-    : "Hover over an area to inspect modeled household need.";
-  document.getElementById("map").setAttribute("aria-label", groupMode
-    ? "Map of the largest ownership-program outreach group by San Diego County PUMA"
-    : "Map of household vulnerability by San Diego County PUMA");
-  renderMapGroupLegend();
-  document.getElementById("map-group-legend").hidden = !groupMode;
+  statusElement.textContent = "Hover over an area to see its vulnerable household count and rate.";
+  document.getElementById("map").setAttribute("aria-label", countMode
+    ? "Map of modeled vulnerable household counts by San Diego County PUMA"
+    : "Map of modeled household vulnerability rates by San Diego County PUMA");
 
   const layout = {
     mapbox: { style: "open-street-map", center: { lat: 33.02, lon: -116.9 }, zoom: 8.15 },
@@ -1386,16 +1344,15 @@ function showMapDetail(code) {
   const puma = state.mapContext?.byCode[code];
   if (!puma) return;
   const area = getOutreachArea(code);
-  const groupMode = state.mapMode === "outreach-groups";
+  const countMode = state.mapMode === "vulnerable-count";
   state.selectedMapPuma = code;
-  document.getElementById("map-detail").classList.toggle("group-mode", groupMode);
   document.getElementById("detail-name").textContent = puma.puma_name;
   document.getElementById("detail-code").textContent = `PUMA ${puma.puma_code}`;
-  document.getElementById("detail-hero-label").textContent = groupMode ? "Largest outreach group" : "Households priced out";
-  document.getElementById("detail-count-label").textContent = groupMode ? "Group / area target" : "Vulnerable / modeled";
-  document.getElementById("detail-vuln").textContent = groupMode && area ? area.dominantSegmentName : `${puma.vulnerability_rate.toFixed(1)}%`;
-  document.getElementById("detail-n").textContent = groupMode && area
-    ? `${formatNumber(area.dominantSegmentCount)} / ${formatNumber(area.marketFirst)} (${area.dominantSegmentShare.toFixed(1)}%)`
+  document.getElementById("detail-hero-label").textContent = countMode ? "Vulnerable households" : "Households priced out";
+  document.getElementById("detail-count-label").textContent = countMode ? "Share of modeled households" : "Vulnerable / modeled";
+  document.getElementById("detail-vuln").textContent = countMode ? formatNumber(puma.n_vulnerable) : `${puma.vulnerability_rate.toFixed(1)}%`;
+  document.getElementById("detail-n").textContent = countMode
+    ? `${puma.vulnerability_rate.toFixed(1)}% of ${formatNumber(puma.n_households)}`
     : `${formatNumber(puma.n_vulnerable)} / ${formatNumber(puma.n_households)}`;
   document.getElementById("detail-income").textContent = formatMoney(puma.median_income);
   document.getElementById("detail-hlb").textContent = formatMoney(puma.median_hlb_year);

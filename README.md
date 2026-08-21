@@ -106,17 +106,16 @@ bulk action. Selection and planning remain anonymous prototype behavior.
 
 ## Site planning map
 
-The map has two switchable layers:
+The map has two vulnerability measures:
 
-- **Housing need** colors each PUMA by the percentage of modeled households that are economically
-  vulnerable (`economically_vulnerable` density — a rate rather than a raw headcount, so large and
-  small PUMAs are comparable).
-- **Dominant outreach group** colors each PUMA by the largest of the same six market-first groups
-  used in Outreach. “Dominant” means the largest group in the area, not necessarily more than 50%.
+- **Vulnerable households** colors each PUMA by the modeled number of economically vulnerable
+  households and is the default view.
+- **Vulnerability rate** colors each PUMA by the percentage of modeled households that are
+  economically vulnerable, making large and small PUMAs easier to compare.
 
 Hovering or clicking an area updates the detail panel with the area's housing figures and a complete
-six-group breakdown. The generated outreach data stores each PUMA's group counts, dominant group,
-and dominant-group share so the map and outreach table stay aligned.
+six-group breakdown. The generated outreach data stores each PUMA's group counts so the map sidebar
+and outreach table stay aligned.
 
 ## Project structure
 

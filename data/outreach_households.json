@@ -208,11 +208,7 @@
         "school-moderate": 717,
         "adult-emerging": 616,
         "adult-moderate": 832
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 1371,
-      "dominantSegmentShare": 29.8
+      }
     },
     {
       "puma": "07330",
@@ -227,11 +223,7 @@
         "school-moderate": 612,
         "adult-emerging": 664,
         "adult-moderate": 592
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 1604,
-      "dominantSegmentShare": 35.1
+      }
     },
     {
       "puma": "07301",
@@ -246,11 +238,7 @@
         "school-moderate": 700,
         "adult-emerging": 440,
         "adult-moderate": 449
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 1259,
-      "dominantSegmentShare": 29.2
+      }
     },
     {
       "puma": "07322",
@@ -265,11 +253,7 @@
         "school-moderate": 651,
         "adult-emerging": 557,
         "adult-moderate": 489
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 1369,
-      "dominantSegmentShare": 32.2
+      }
     },
     {
       "puma": "07313",
@@ -284,11 +268,7 @@
         "school-moderate": 689,
         "adult-emerging": 354,
         "adult-moderate": 494
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 961,
-      "dominantSegmentShare": 25.4
+      }
     },
     {
       "puma": "07329",
@@ -303,11 +283,7 @@
         "school-moderate": 1141,
         "adult-emerging": 167,
         "adult-moderate": 426
-      },
-      "dominantSegmentId": "school-moderate",
-      "dominantSegmentName": "School-age families blocked by prices",
-      "dominantSegmentCount": 1141,
-      "dominantSegmentShare": 31.8
+      }
     },
     {
       "puma": "07317",
@@ -322,11 +298,7 @@
         "school-moderate": 265,
         "adult-emerging": 705,
         "adult-moderate": 264
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 1339,
-      "dominantSegmentShare": 39.5
+      }
     },
     {
       "puma": "07328",
@@ -341,11 +313,7 @@
         "school-moderate": 371,
         "adult-emerging": 400,
         "adult-moderate": 168
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 1324,
-      "dominantSegmentShare": 41.0
+      }
     },
     {
       "puma": "07306",
@@ -360,11 +328,7 @@
         "school-moderate": 651,
         "adult-emerging": 353,
         "adult-moderate": 328
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 741,
-      "dominantSegmentShare": 23.9
+      }
     },
     {
       "puma": "07315",
@@ -379,11 +343,7 @@
         "school-moderate": 563,
         "adult-emerging": 333,
         "adult-moderate": 390
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 699,
-      "dominantSegmentShare": 25.1
+      }
     },
     {
       "puma": "07323",
@@ -398,11 +358,7 @@
         "school-moderate": 490,
         "adult-emerging": 284,
         "adult-moderate": 358
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 695,
-      "dominantSegmentShare": 26.6
+      }
     },
     {
       "puma": "07314",
@@ -417,11 +373,7 @@
         "school-moderate": 479,
         "adult-emerging": 168,
         "adult-moderate": 268
-      },
-      "dominantSegmentId": "young-moderate",
-      "dominantSegmentName": "Young families priced out at mid-income",
-      "dominantSegmentCount": 691,
-      "dominantSegmentShare": 27.7
+      }
     },
     {
       "puma": "07307",
@@ -436,11 +388,7 @@
         "school-moderate": 609,
         "adult-emerging": 177,
         "adult-moderate": 309
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 637,
-      "dominantSegmentShare": 26.3
+      }
     },
     {
       "puma": "07325",
@@ -455,11 +403,7 @@
         "school-moderate": 544,
         "adult-emerging": 168,
         "adult-moderate": 286
-      },
-      "dominantSegmentId": "school-moderate",
-      "dominantSegmentName": "School-age families blocked by prices",
-      "dominantSegmentCount": 544,
-      "dominantSegmentShare": 23.2
+      }
     },
     {
       "puma": "07302",
@@ -474,11 +418,7 @@
         "school-moderate": 272,
         "adult-emerging": 381,
         "adult-moderate": 292
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 567,
-      "dominantSegmentShare": 26.3
+      }
     },
     {
       "puma": "07310",
@@ -493,11 +433,7 @@
         "school-moderate": 494,
         "adult-emerging": 45,
         "adult-moderate": 147
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 504,
-      "dominantSegmentShare": 27.6
+      }
     },
     {
       "puma": "07326",
@@ -512,11 +448,7 @@
         "school-moderate": 803,
         "adult-emerging": 124,
         "adult-moderate": 35
-      },
-      "dominantSegmentId": "school-moderate",
-      "dominantSegmentName": "School-age families blocked by prices",
-      "dominantSegmentCount": 803,
-      "dominantSegmentShare": 44.5
+      }
     },
     {
       "puma": "07311",
@@ -531,11 +463,7 @@
         "school-moderate": 823,
         "adult-emerging": 57,
         "adult-moderate": 304
-      },
-      "dominantSegmentId": "school-moderate",
-      "dominantSegmentName": "School-age families blocked by prices",
-      "dominantSegmentCount": 823,
-      "dominantSegmentShare": 48.2
+      }
     },
     {
       "puma": "07312",
@@ -550,11 +478,7 @@
         "school-moderate": 240,
         "adult-emerging": 126,
         "adult-moderate": 368
-      },
-      "dominantSegmentId": "adult-moderate",
-      "dominantSegmentName": "Adult households facing the market gap",
-      "dominantSegmentCount": 368,
-      "dominantSegmentShare": 23.8
+      }
     },
     {
       "puma": "07324",
@@ -569,11 +493,7 @@
         "school-moderate": 452,
         "adult-emerging": 53,
         "adult-moderate": 212
-      },
-      "dominantSegmentId": "school-moderate",
-      "dominantSegmentName": "School-age families blocked by prices",
-      "dominantSegmentCount": 452,
-      "dominantSegmentShare": 30.9
+      }
     },
     {
       "puma": "07308",
@@ -588,11 +508,7 @@
         "school-moderate": 408,
         "adult-emerging": 96,
         "adult-moderate": 100
-      },
-      "dominantSegmentId": "school-moderate",
-      "dominantSegmentName": "School-age families blocked by prices",
-      "dominantSegmentCount": 408,
-      "dominantSegmentShare": 29.6
+      }
     },
     {
       "puma": "07316",
@@ -607,11 +523,7 @@
         "school-moderate": 201,
         "adult-emerging": 115,
         "adult-moderate": 84
-      },
-      "dominantSegmentId": "school-emerging",
-      "dominantSegmentName": "Growing school-age families",
-      "dominantSegmentCount": 364,
-      "dominantSegmentShare": 29.7
+      }
     }
   ],
   "households": [

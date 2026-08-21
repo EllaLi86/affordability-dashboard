@@ -217,14 +217,6 @@ def main() -> None:
             segment_id: segment_puma_counts[segment_id][puma]
             for segment_id in SEGMENT_META
         }
-        dominant_segment_id = max(
-            SEGMENT_META,
-            key=lambda segment_id: (
-                area_segment_counts[segment_id],
-                -SEGMENT_META[segment_id]["priority"],
-            ),
-        )
-        dominant_segment_count = area_segment_counts[dominant_segment_id]
         areas.append(
             {
                 "puma": puma,
@@ -233,10 +225,6 @@ def main() -> None:
                 "considerNext": counts["consider-next"],
                 "shareOfMarketFirst": round(market_first / tier_counts["market-first"] * 100, 1),
                 "segmentCounts": area_segment_counts,
-                "dominantSegmentId": dominant_segment_id,
-                "dominantSegmentName": SEGMENT_META[dominant_segment_id]["name"],
-                "dominantSegmentCount": dominant_segment_count,
-                "dominantSegmentShare": round(dominant_segment_count / market_first * 100, 1),
             }
         )
     areas.sort(key=lambda item: (-item["marketFirst"], item["puma"]))
