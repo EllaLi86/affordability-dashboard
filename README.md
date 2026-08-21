@@ -25,7 +25,6 @@ stats. Built from the San Diego HLB Hackathon 2024 dataset.
 ## Project structure
 
 ```
-```
 .
 ├── index.html                       # the whole dashboard (Plotly.js + Chart.js + vanilla JS, no build step)
 ├── data/
@@ -38,7 +37,6 @@ stats. Built from the San Diego HLB Hackathon 2024 dataset.
 │   ├── rank_low_mid_income.py       # regenerates data/low_mid_income_priority.json
 │   └── fetch_age_demographics.py    # regenerates data/tract_age_demographics.json (needs a Census API key)
 └── README.md
-```
 ```
 
 The full ~175MB source CSV never ships in this repo or the browser — only the small aggregated
