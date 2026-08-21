@@ -1,4 +1,5 @@
 const STORAGE_KEY = "housing-access-demo-state-v3";
+const OUTREACH_STORAGE_KEY = "housing-access-outreach-demo-state-v1";
 const DEMO_START_DATE = new Date("2026-08-20T12:00:00");
 
 const state = {
@@ -21,6 +22,15 @@ const state = {
   buyerAmiFilter: "all",
   buyerReadinessFilter: "all",
   planningRate: 6.5,
+  outreachData: null,
+  outreachSearch: "",
+  outreachTier: "market-first",
+  outreachSize: "all",
+  outreachArea: "all",
+  outreachChannel: "all",
+  outreachSort: "fit",
+  selectedOutreachId: null,
+  outreachStatuses: {},
   mapLoaded: false,
   toastTimer: null,
 };
@@ -96,6 +106,10 @@ function formatMoney(value) {
 
 function formatNumber(value) {
   return new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 }).format(value);
+}
+
+function formatCompactNumber(value) {
+  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(value);
 }
 
 function formatDate(dateString) {
@@ -475,6 +489,162 @@ function renderMortgageWorkspace() {
   renderMortgageDetail();
 }
 
+const outreachPlanStages = {
+  "not-planned": { label: "Not planned", action: "Add to campaign" },
+  "campaign-ready": { label: "Campaign ready", action: "Assign partner" },
+  "partner-assigned": { label: "Partner assigned", action: "Reset plan" },
+};
+
+function outreachTierLabel(tier) {
+  return tier === "market-first" ? "Market first" : "Consider next";
+}
+
+function loadOutreachStatuses() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(OUTREACH_STORAGE_KEY) || "{}");
+    return stored && typeof stored === "object" && !Array.isArray(stored) ? stored : {};
+  } catch (_error) {
+    return {};
+  }
+}
+
+function saveOutreachStatuses() {
+  localStorage.setItem(OUTREACH_STORAGE_KEY, JSON.stringify(state.outreachStatuses));
+}
+
+function getOutreachStatus(id) {
+  return state.outreachStatuses[id] || "not-planned";
+}
+
+function getFilteredOutreachHouseholds() {
+  if (!state.outreachData) return [];
+  const query = state.outreachSearch.trim().toLowerCase();
+  const tierOrder = { "market-first": 0, "consider-next": 1 };
+  const households = state.outreachData.households.filter((household) => {
+    const searchMatch = !query
+      || household.id.toLowerCase().includes(query)
+      || household.pumaName.toLowerCase().includes(query)
+      || household.tract.includes(query)
+      || household.puma.includes(query);
+    return searchMatch
+      && (state.outreachTier === "all" || household.tier === state.outreachTier)
+      && (state.outreachSize === "all" || household.householdSize === Number(state.outreachSize))
+      && (state.outreachArea === "all" || household.puma === state.outreachArea)
+      && (state.outreachChannel === "all" || household.recommendedChannel === state.outreachChannel);
+  });
+
+  return households.sort((a, b) => {
+    if (state.outreachSort === "gap") return a.annualGap - b.annualGap || a.id.localeCompare(b.id);
+    if (state.outreachSort === "income") return b.income - a.income || a.id.localeCompare(b.id);
+    if (state.outreachSort === "area") return a.pumaName.localeCompare(b.pumaName) || a.id.localeCompare(b.id);
+    return tierOrder[a.tier] - tierOrder[b.tier]
+      || b.coveragePercent - a.coveragePercent
+      || a.annualGap - b.annualGap
+      || a.id.localeCompare(b.id);
+  });
+}
+
+function initializeOutreachFilters() {
+  if (!state.outreachData) return;
+  const areaSelect = document.getElementById("outreach-area-filter");
+  areaSelect.innerHTML = '<option value="all">All planning areas</option>'
+    + state.outreachData.areas
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name))
+      .map((area) => `<option value="${escapeHtml(area.puma)}">${escapeHtml(area.name)}</option>`)
+      .join("");
+  const channels = [...new Set(state.outreachData.households.map((household) => household.recommendedChannel))].sort();
+  document.getElementById("outreach-channel-filter").innerHTML = '<option value="all">All channels</option>'
+    + channels.map((channel) => `<option value="${escapeHtml(channel)}">${escapeHtml(channel)}</option>`).join("");
+}
+
+function renderOutreachMetrics() {
+  if (!state.outreachData) return;
+  const { summary } = state.outreachData;
+  const planned = Object.values(state.outreachStatuses).filter((status) => status !== "not-planned").length;
+  document.getElementById("outreach-metrics").innerHTML = `
+    <article class="metric-card emphasis"><span>Market-First Audience</span><strong>${formatNumber(summary.marketFirst)}</strong><small>modeled 4–5-person households</small></article>
+    <article class="metric-card"><span>Median Audience Income</span><strong>${formatMoney(summary.medianMarketFirstIncome)}</strong><small>low–middle planning segment</small></article>
+    <article class="metric-card"><span>Median Affordability Gap</span><strong>${formatMoney(summary.medianMarketFirstGap)}</strong><small>income below modeled HLB</small></article>
+    <article class="metric-card"><span>Campaign Plan</span><strong>${planned}</strong><small>representative rows queued locally</small></article>
+  `;
+  document.getElementById("outreach-count").textContent = formatCompactNumber(summary.marketFirst);
+}
+
+function renderOutreachRows() {
+  const households = getFilteredOutreachHouseholds();
+  const total = state.outreachData?.households.length || 0;
+  document.getElementById("outreach-summary").textContent = `${households.length} of ${total} representative synthetic households shown`;
+  document.getElementById("outreach-empty").hidden = households.length !== 0;
+  if (households.length && !households.some((household) => household.id === state.selectedOutreachId)) {
+    state.selectedOutreachId = households[0].id;
+  }
+  if (!households.length) state.selectedOutreachId = null;
+
+  document.getElementById("outreach-rows").innerHTML = households.map((household) => {
+    const selected = household.id === state.selectedOutreachId;
+    const statusKey = getOutreachStatus(household.id);
+    const status = outreachPlanStages[statusKey];
+    return `
+      <tr class="${selected ? "selected" : ""}" data-outreach-id="${escapeHtml(household.id)}" tabindex="0" aria-selected="${selected}">
+        <td><div class="outreach-id-cell"><strong>${escapeHtml(household.id)}</strong><span>Census tract ${escapeHtml(household.tract.slice(-6))}</span><span class="badge outreach-${household.tier}">${outreachTierLabel(household.tier)}</span></div></td>
+        <td><div class="cell-stack"><strong>${household.householdSize} people</strong><span>${household.adults} adults · ${household.children} children</span></div></td>
+        <td><div class="cell-stack outreach-income-cell"><strong>${formatMoney(household.income)}</strong><span>${household.coveragePercent}% of modeled budget</span><small>${formatMoney(household.annualGap)} annual gap</small></div></td>
+        <td><div class="cell-stack outreach-area-cell"><strong>${escapeHtml(household.pumaName)}</strong><span>PUMA ${escapeHtml(household.puma)}</span></div></td>
+        <td><div class="channel-cell"><strong>${escapeHtml(household.recommendedChannel)}</strong><span>Broad community outreach</span></div></td>
+        <td><div class="campaign-cell"><span class="badge campaign-${statusKey}">${status.label}</span><button class="text-button" type="button" data-outreach-action data-outreach-id="${escapeHtml(household.id)}">${status.action}</button></div></td>
+      </tr>
+    `;
+  }).join("");
+}
+
+function renderOutreachAreas() {
+  if (!state.outreachData) return;
+  const areas = state.outreachData.areas.slice(0, 5);
+  const maxAudience = Math.max(...areas.map((area) => area.marketFirst), 1);
+  document.getElementById("outreach-areas").innerHTML = areas.map((area, index) => `
+    <button type="button" class="outreach-area-row" data-outreach-area="${escapeHtml(area.puma)}">
+      <span class="area-rank">${index + 1}</span>
+      <span class="area-row-main"><strong>${escapeHtml(area.name)}</strong><small>${formatNumber(area.marketFirst)} modeled households · ${area.shareOfMarketFirst}% of audience</small><i><b style="width:${Math.round(area.marketFirst / maxAudience * 100)}%"></b></i></span>
+    </button>
+  `).join("");
+}
+
+function renderOutreachDetail() {
+  const detail = document.getElementById("outreach-detail");
+  const household = state.outreachData?.households.find((item) => item.id === state.selectedOutreachId);
+  if (!household) {
+    detail.innerHTML = '<div class="empty-state compact-empty"><h3>Select a household pattern</h3><p>Audience fit and channel guidance will appear here.</p></div>';
+    return;
+  }
+  const statusKey = getOutreachStatus(household.id);
+  const status = outreachPlanStages[statusKey];
+  detail.innerHTML = `
+    <div class="outreach-detail-head"><div><p class="eyebrow">SELECTED SYNTHETIC HOUSEHOLD</p><h2>${escapeHtml(household.id)}</h2><p>${escapeHtml(household.pumaName)} · PUMA ${escapeHtml(household.puma)}</p></div><span class="badge outreach-${household.tier}">${outreachTierLabel(household.tier)}</span></div>
+    <div class="outreach-fit-box"><strong>Why this audience fits</strong><ul><li>${household.householdSize}-person household aligns with family-sized units</li><li>${formatMoney(household.income)} is within the low–middle campaign band</li><li>Income covers ${household.coveragePercent}% of the modeled Household Living Budget</li></ul></div>
+    <div class="outreach-detail-facts"><div><span>Adults / children</span><strong>${household.adults} / ${household.children}</strong></div><div><span>Annual budget gap</span><strong>${formatMoney(household.annualGap)}</strong></div><div><span>Modeled housing cost</span><strong>${formatMoney(household.housingCostMonth)} / month</strong></div><div><span>Campaign status</span><strong>${status.label}</strong></div></div>
+    <div class="channel-recommendation"><span class="segment-icon" aria-hidden="true">◎</span><div><p class="eyebrow">SUGGESTED CHANNEL</p><h3>${escapeHtml(household.recommendedChannel)}</h3><p>${escapeHtml(household.channelReason)}</p></div></div>
+    <button class="primary-button outreach-plan-button" type="button" data-outreach-action data-outreach-id="${escapeHtml(household.id)}">${status.action}</button>
+    <p class="calculation-note">This row cannot be contacted. Add it to the campaign plan only as an anonymous example of the audience pattern.</p>
+  `;
+}
+
+function renderOutreachWorkspace() {
+  renderOutreachMetrics();
+  renderOutreachRows();
+  renderOutreachAreas();
+  renderOutreachDetail();
+}
+
+function advanceOutreachPlan(id) {
+  const current = getOutreachStatus(id);
+  const next = current === "not-planned" ? "campaign-ready" : current === "campaign-ready" ? "partner-assigned" : "not-planned";
+  state.outreachStatuses[id] = next;
+  saveOutreachStatuses();
+  renderOutreachWorkspace();
+  showToast(next === "not-planned" ? "Household pattern removed from the campaign plan." : `${outreachPlanStages[next].label} for this anonymous audience example.`);
+}
+
 function loadStoredState(applications) {
   try {
     const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -852,6 +1022,7 @@ function switchView(viewName) {
   document.querySelector(".sidebar").classList.remove("open");
   document.querySelector(".mobile-menu").setAttribute("aria-expanded", "false");
   if (viewName === "mortgage") renderMortgageWorkspace();
+  if (viewName === "outreach") renderOutreachWorkspace();
   if (viewName === "map") initializeMap();
 }
 
@@ -964,6 +1135,52 @@ function bindEvents() {
   document.querySelector(".mobile-menu").addEventListener("click", (event) => {
     const open = document.querySelector(".sidebar").classList.toggle("open");
     event.currentTarget.setAttribute("aria-expanded", String(open));
+  });
+
+  document.getElementById("outreach-search").addEventListener("input", (event) => {
+    state.outreachSearch = event.target.value;
+    renderOutreachWorkspace();
+  });
+  [
+    ["outreach-tier-filter", "outreachTier"],
+    ["outreach-size-filter", "outreachSize"],
+    ["outreach-area-filter", "outreachArea"],
+    ["outreach-channel-filter", "outreachChannel"],
+    ["outreach-sort", "outreachSort"],
+  ].forEach(([id, stateKey]) => document.getElementById(id).addEventListener("change", (event) => {
+    state[stateKey] = event.target.value;
+    renderOutreachWorkspace();
+  }));
+  document.getElementById("outreach-rows").addEventListener("click", (event) => {
+    const action = event.target.closest("[data-outreach-action]");
+    if (action) {
+      advanceOutreachPlan(action.dataset.outreachId);
+      return;
+    }
+    const row = event.target.closest("tr[data-outreach-id]");
+    if (!row) return;
+    state.selectedOutreachId = row.dataset.outreachId;
+    renderOutreachWorkspace();
+  });
+  document.getElementById("outreach-rows").addEventListener("keydown", (event) => {
+    if (event.target.closest("button")) return;
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const row = event.target.closest("tr[data-outreach-id]");
+    if (!row) return;
+    event.preventDefault();
+    state.selectedOutreachId = row.dataset.outreachId;
+    renderOutreachWorkspace();
+  });
+  document.getElementById("outreach-areas").addEventListener("click", (event) => {
+    const area = event.target.closest("[data-outreach-area]");
+    if (!area) return;
+    state.outreachArea = area.dataset.outreachArea;
+    document.getElementById("outreach-area-filter").value = state.outreachArea;
+    renderOutreachWorkspace();
+  });
+  document.getElementById("outreach-detail").addEventListener("click", (event) => {
+    const action = event.target.closest("[data-outreach-action]");
+    if (action) advanceOutreachPlan(action.dataset.outreachId);
   });
 
   document.getElementById("buyer-search").addEventListener("input", (event) => {
@@ -1082,6 +1299,7 @@ function bindEvents() {
 
   document.getElementById("open-intake").addEventListener("click", () => { openDialog("intake-dialog"); updateIntakePreview(); });
   document.getElementById("open-method").addEventListener("click", () => openDialog("method-dialog"));
+  document.getElementById("outreach-method").addEventListener("click", () => openDialog("outreach-method-dialog"));
   document.querySelectorAll("[data-close-dialog]").forEach((button) => button.addEventListener("click", () => closeDialog(button.dataset.closeDialog)));
   document.querySelectorAll(".app-dialog").forEach((dialog) => dialog.addEventListener("click", (event) => { if (event.target === dialog) dialog.close(); }));
   document.getElementById("intake-form").addEventListener("input", updateIntakePreview);
@@ -1095,20 +1313,26 @@ function bindEvents() {
 async function initialize() {
   bindEvents();
   try {
-    const [applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse] = await Promise.all([
+    const [applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse, outreachResponse] = await Promise.all([
       fetch("data/applications.json"),
       fetch("data/properties.json"),
       fetch("data/buyer_profiles.json"),
       fetch("data/mortgage_programs.json"),
+      fetch("data/outreach_households.json"),
     ]);
-    if (![applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse].every((response) => response.ok)) throw new Error("One or more data files could not be loaded");
+    if (![applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse, outreachResponse].every((response) => response.ok)) throw new Error("One or more data files could not be loaded");
     state.properties = await propertiesResponse.json();
     state.buyerProfiles = await buyerProfilesResponse.json();
     state.mortgagePrograms = await mortgageProgramsResponse.json();
+    state.outreachData = await outreachResponse.json();
+    state.outreachStatuses = loadOutreachStatuses();
     state.applications = loadStoredState(await applicationsResponse.json());
     state.selectedId = state.applications.find((application) => application.id === "HA-260211")?.id || getFilteredApplications()[0]?.id || null;
+    state.selectedOutreachId = state.outreachData.households.find((household) => household.tier === "market-first")?.id || null;
+    initializeOutreachFilters();
     renderApplications();
     renderMortgageWorkspace();
+    renderOutreachWorkspace();
   } catch (error) {
     document.getElementById("queue-summary").textContent = "Application data could not be loaded.";
     document.getElementById("application-rows").innerHTML = `<tr><td colspan="7">Serve this folder over HTTP to load the demonstration data (${escapeHtml(error.message)}).</td></tr>`;

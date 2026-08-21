@@ -43,7 +43,7 @@
         <button class="nav-item" type="button" data-view="outreach">
           <span class="nav-icon" aria-hidden="true">◎</span>
           <span>Outreach</span>
-          <span class="nav-soon">Soon</span>
+          <span class="nav-count teal-count" id="outreach-count">0</span>
         </button>
         <button class="nav-item" type="button" data-view="map">
           <span class="nav-icon" aria-hidden="true">◇</span>
@@ -312,13 +312,59 @@
       </section>
 
       <section class="view" id="outreach-view" data-view-panel="outreach">
-        <div class="placeholder-page">
-          <span class="placeholder-mark" aria-hidden="true">◎</span>
-          <p class="eyebrow">OUTREACH PLANNING</p>
-          <h1>Reach households who may not know about the program</h1>
-          <p>This area is reserved for audience segments, channel planning, languages, and campaign follow-up.</p>
-          <span class="coming-badge">Planned next</span>
+        <div class="page-heading outreach-page-heading">
+          <div>
+            <p class="eyebrow">OUTREACH PLANNING</p>
+            <h1>Who should hear about the ownership program first?</h1>
+            <p>Find 4–5-person households with low-to-middle modeled incomes who may have a sustainable path to ownership but remain priced out by current costs.</p>
+          </div>
         </div>
+
+        <div class="prototype-notice outreach-notice" role="note">
+          <span class="notice-icon" aria-hidden="true">i</span>
+          <div><strong>Audience planning—not a contact list.</strong> Every row is a synthetic household from the hackathon dataset. It has no name, address, phone number, email, or permission to contact. Use the patterns to plan broad community outreach.</div>
+          <button type="button" id="outreach-method">How this audience is defined</button>
+        </div>
+
+        <div class="buyer-segment-strip outreach-segment-strip">
+          <div><span class="segment-icon" aria-hidden="true">◎</span><div><strong>Market-first audience</strong><small>4–5 people · $75,000–$150,000 modeled income · below the Household Living Budget · income covers at least half of the modeled budget</small></div></div>
+          <div class="segment-tags"><span>Family-sized home</span><span>Low–middle income</span><span>Priced out, not no-income</span></div>
+        </div>
+
+        <div class="metric-grid" id="outreach-metrics" aria-label="Outreach audience summary"></div>
+
+        <div class="outreach-layout">
+          <section class="outreach-queue-card" aria-label="Synthetic outreach audience">
+            <div class="queue-header outreach-queue-header">
+              <div><h2>Audience planning queue</h2><p id="outreach-summary">Loading synthetic household patterns…</p></div>
+              <label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Search synthetic households</span><input id="outreach-search" type="search" placeholder="Search ID, area, or tract"></label>
+            </div>
+            <div class="outreach-filters" aria-label="Outreach filters">
+              <label><span class="sr-only">Filter by audience tier</span><select id="outreach-tier-filter"><option value="market-first">Market first</option><option value="all">All planning tiers</option><option value="consider-next">Consider next</option></select></label>
+              <label><span class="sr-only">Filter by household size</span><select id="outreach-size-filter"><option value="all">4–5 people</option><option value="4">4 people</option><option value="5">5 people</option></select></label>
+              <label><span class="sr-only">Filter by planning area</span><select id="outreach-area-filter"><option value="all">All planning areas</option></select></label>
+              <label><span class="sr-only">Filter by outreach channel</span><select id="outreach-channel-filter"><option value="all">All channels</option></select></label>
+              <label><span class="sr-only">Sort outreach audience</span><select id="outreach-sort"><option value="fit">Best target fit</option><option value="gap">Smallest affordability gap</option><option value="income">Highest income first</option><option value="area">Planning area</option></select></label>
+            </div>
+            <div class="outreach-table-wrap">
+              <table class="outreach-table">
+                <thead><tr><th scope="col">Synthetic household</th><th scope="col">Family</th><th scope="col">Income position</th><th scope="col">Planning area</th><th scope="col">Suggested channel</th><th scope="col">Campaign plan</th></tr></thead>
+                <tbody id="outreach-rows"></tbody>
+              </table>
+              <div class="empty-state compact-empty" id="outreach-empty" hidden><h3>No household patterns found</h3><p>Try changing the outreach filters.</p></div>
+            </div>
+          </section>
+
+          <aside class="outreach-insights" aria-label="Outreach planning details">
+            <section class="outreach-insight-card area-focus-card">
+              <div class="section-heading-row"><div><p class="eyebrow">AREA FOCUS</p><h2>Largest modeled audiences</h2></div><span>Top 5</span></div>
+              <div id="outreach-areas" class="outreach-area-list"></div>
+            </section>
+            <section class="outreach-insight-card" id="outreach-detail" aria-live="polite"></section>
+          </aside>
+        </div>
+
+        <p class="data-footnote">Source: San Diego Household Living Budget synthetic population, 2024. Counts are modeled households and representative rows are anonymous planning examples. Audience tiers are not program eligibility, urgency, or evidence that a household can be contacted.</p>
       </section>
     </main>
   </div>
@@ -405,6 +451,25 @@
     </div>
     <div class="guardrail-box"><strong>AI assistance guardrails</strong><p>Automation may summarize cases, identify missing documents, and compare applicant information with published property criteria. It does not approve, deny, or independently decide who deserves housing. HLB is context for affordability need—not a final property eligibility rule.</p></div>
     <div class="dialog-actions"><button class="primary-button" type="button" data-close-dialog="method-dialog">Got it</button></div>
+  </dialog>
+
+  <dialog id="outreach-method-dialog" class="app-dialog method-dialog">
+    <div class="dialog-header">
+      <div>
+        <p class="eyebrow">TRANSPARENT AUDIENCE LOGIC</p>
+        <h2>How outreach priority works</h2>
+        <p>The audience is based on program fit, not emergency need or individual eligibility.</p>
+      </div>
+      <button class="dialog-close" type="button" data-close-dialog="outreach-method-dialog" aria-label="Close">×</button>
+    </div>
+    <div class="method-list">
+      <article><strong>01</strong><div><h3>Start with family-sized households</h3><p>Market first includes synthetic households with exactly four or five members, matching the program's family-sized ownership units.</p></div></article>
+      <article><strong>02</strong><div><h3>Focus on low–middle modeled income</h3><p>The planning band is $75,000–$150,000 per year. It is a campaign assumption for this prototype, not an official AMI or eligibility limit.</p></div></article>
+      <article><strong>03</strong><div><h3>Look for a realistic affordability bridge</h3><p>Income must be below the modeled Household Living Budget but cover at least half of it. This avoids treating no-income households as the primary ownership-marketing audience.</p></div></article>
+      <article><strong>04</strong><div><h3>Use broad, trusted channels</h3><p>Child age bands suggest community channels such as schools or family-resource partners. They do not identify, locate, or authorize contact with any real household.</p></div></article>
+    </div>
+    <div class="guardrail-box"><strong>Important limitation</strong><p>The hackathon data contains synthetic household IDs and modeled geography only. The dashboard supports area and channel planning; actual outreach must use consented government or partner contact systems and comply with program policy.</p></div>
+    <div class="dialog-actions"><button class="primary-button" type="button" data-close-dialog="outreach-method-dialog">Got it</button></div>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

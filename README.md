@@ -69,6 +69,22 @@ application has `financingPath: "mortgage-matching"` and a corresponding buyer p
 applications remain in ownership and financing review; absence from Mortgage matching is not a
 denial.
 
+## Outreach planning
+
+The Outreach view turns the full Household Living Budget synthetic population into an anonymous
+campaign-planning audience. It does not claim that the rows are real people or provide contact
+information. The default `Market first` audience is defined transparently as:
+
+- Exactly four or five household members.
+- Modeled annual household income from $75,000 through $150,000.
+- Income below that row's modeled Household Living Budget, while covering at least 50% of it.
+
+This prototype rule targets the team's intended low-to-middle-income, family-sized ownership
+segment: households with meaningful income that remain priced out. It is not an official AMI band,
+program eligibility rule, urgency score, or permission to contact anyone. The dashboard displays a
+small deterministic sample across all 22 PUMAs, full modeled audience counts, broad channel ideas,
+area concentrations, filters, and device-local campaign-planning statuses.
+
 ## Site planning map
 
 - **Color** = the % of households in that PUMA that are economically vulnerable
@@ -91,10 +107,12 @@ denial.
 │   ├── applications.json      # fictional application records for the prototype
 │   ├── buyer_profiles.json     # fictional buyer-readiness and purchase-planning inputs
 │   ├── mortgage_programs.json  # published program features and official source links
+│   ├── outreach_households.json # modeled counts and representative synthetic outreach rows
 │   ├── properties.json        # fictional properties and published matching criteria
 │   └── puma_stats.json        # small (22-row) precomputed PUMA-level summary
 ├── scripts/
-│   └── build_data.py          # regenerates data/puma_stats.json from the raw CSV
+│   ├── build_data.py          # regenerates data/puma_stats.json from the raw CSV
+│   └── build_outreach_data.py # regenerates the compact outreach-planning dataset
 └── README.md
 ```
 
@@ -126,6 +144,12 @@ python scripts/build_data.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.c
 ```
 
 This overwrites `data/puma_stats.json`. Commit the updated file — nothing else needs to change.
+
+To regenerate the outreach audience from the same source CSV:
+
+```bash
+python scripts/build_outreach_data.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
+```
 
 
 ## Data notes / caveats
