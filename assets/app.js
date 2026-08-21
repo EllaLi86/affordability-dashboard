@@ -28,10 +28,13 @@ const state = {
   outreachTier: "market-first",
   outreachSegment: "all",
   outreachSize: "all",
+  outreachIncome: "all",
   outreachArea: "all",
   outreachChannel: "all",
+  outreachPlanStatus: "all",
   outreachSort: "fit",
   selectedOutreachId: null,
+  selectedOutreachIds: [],
   outreachStatuses: {},
   outreachCampaignGroups: [],
   mapLoaded: false,
@@ -546,8 +549,13 @@ function getFilteredOutreachHouseholds() {
       && (state.outreachTier === "all" || household.tier === state.outreachTier)
       && (state.outreachSegment === "all" || household.segmentId === state.outreachSegment)
       && (state.outreachSize === "all" || household.householdSize === Number(state.outreachSize))
+      && (state.outreachIncome === "all"
+        || (state.outreachIncome === "75-110" && household.income >= 75000 && household.income < 110000)
+        || (state.outreachIncome === "110-150" && household.income >= 110000 && household.income <= 150000)
+        || (state.outreachIncome === "outside-market" && (household.income < 75000 || household.income > 150000)))
       && (state.outreachArea === "all" || household.puma === state.outreachArea)
-      && (state.outreachChannel === "all" || household.recommendedChannel === state.outreachChannel);
+      && (state.outreachChannel === "all" || household.recommendedChannel === state.outreachChannel)
+      && (state.outreachPlanStatus === "all" || getOutreachStatus(household.id) === state.outreachPlanStatus);
   });
 
   return households.sort((a, b) => {
@@ -603,10 +611,12 @@ function renderOutreachRows() {
 
   document.getElementById("outreach-rows").innerHTML = households.map((household) => {
     const selected = household.id === state.selectedOutreachId;
+    const checked = state.selectedOutreachIds.includes(household.id);
     const statusKey = getOutreachStatus(household.id);
     const status = outreachPlanStages[statusKey];
     return `
-      <tr class="${selected ? "selected" : ""}" data-outreach-id="${escapeHtml(household.id)}" tabindex="0" aria-selected="${selected}">
+      <tr class="${selected ? "selected" : ""} ${checked ? "mail-selected" : ""}" data-outreach-id="${escapeHtml(household.id)}" tabindex="0" aria-selected="${selected}">
+        <td class="outreach-select-column"><label><span class="sr-only">Select ${escapeHtml(household.id)} for the mailing plan</span><input type="checkbox" data-select-outreach="${escapeHtml(household.id)}" ${checked ? "checked" : ""}></label></td>
         <td><div class="outreach-id-cell"><strong>${escapeHtml(household.id)}</strong><span>Census tract ${escapeHtml(household.tract.slice(-6))}</span><span class="badge outreach-${household.tier}">${outreachTierLabel(household.tier)}</span></div></td>
         <td><div class="cell-stack"><strong>${household.householdSize} people</strong><span>${household.adults} adults · ${household.children} children</span><small class="outreach-group-name">${escapeHtml(household.segmentName)}</small></div></td>
         <td><div class="cell-stack outreach-income-cell"><strong>${formatMoney(household.income)}</strong><span>${household.coveragePercent}% of modeled budget</span><small>${formatMoney(household.annualGap)} annual gap</small></div></td>
@@ -616,6 +626,19 @@ function renderOutreachRows() {
       </tr>
     `;
   }).join("");
+}
+
+function renderOutreachBulkToolbar() {
+  const visible = getFilteredOutreachHouseholds();
+  const selected = new Set(state.selectedOutreachIds);
+  const visibleSelected = visible.filter((household) => selected.has(household.id)).length;
+  const selectAll = document.getElementById("outreach-select-all");
+  selectAll.checked = visible.length > 0 && visibleSelected === visible.length;
+  selectAll.indeterminate = visibleSelected > 0 && visibleSelected < visible.length;
+  const count = state.selectedOutreachIds.length;
+  document.getElementById("outreach-selected-count").textContent = `${count} selected`;
+  document.getElementById("outreach-add-selected").disabled = count === 0;
+  document.getElementById("outreach-clear-selection").disabled = count === 0;
 }
 
 function renderOutreachGroups() {
@@ -693,8 +716,27 @@ function renderOutreachWorkspace() {
   renderOutreachGroups();
   renderOutreachCampaignPlan();
   renderOutreachRows();
+  renderOutreachBulkToolbar();
   renderOutreachAreas();
   renderOutreachDetail();
+}
+
+function setOutreachSelection(id, selected) {
+  const ids = new Set(state.selectedOutreachIds);
+  if (selected) ids.add(id);
+  else ids.delete(id);
+  state.selectedOutreachIds = [...ids];
+  renderOutreachWorkspace();
+}
+
+function addSelectedOutreachToMailingPlan() {
+  if (!state.selectedOutreachIds.length) return;
+  state.selectedOutreachIds.forEach((id) => { state.outreachStatuses[id] = "campaign-ready"; });
+  saveOutreachStatuses();
+  const count = state.selectedOutreachIds.length;
+  state.selectedOutreachIds = [];
+  renderOutreachWorkspace();
+  showToast(`${count} anonymous household patterns added to the mailing plan.`);
 }
 
 function toggleOutreachCampaignGroup(id) {
@@ -1218,8 +1260,10 @@ function bindEvents() {
     ["outreach-tier-filter", "outreachTier"],
     ["outreach-group-filter", "outreachSegment"],
     ["outreach-size-filter", "outreachSize"],
+    ["outreach-income-filter", "outreachIncome"],
     ["outreach-area-filter", "outreachArea"],
     ["outreach-channel-filter", "outreachChannel"],
+    ["outreach-status-filter", "outreachPlanStatus"],
     ["outreach-sort", "outreachSort"],
   ].forEach(([id, stateKey]) => document.getElementById(id).addEventListener("change", (event) => {
     state[stateKey] = event.target.value;
@@ -1251,7 +1295,24 @@ function bindEvents() {
     const remove = event.target.closest("[data-remove-campaign-group]");
     if (remove) toggleOutreachCampaignGroup(remove.dataset.removeCampaignGroup);
   });
+  document.getElementById("outreach-select-all").addEventListener("change", (event) => {
+    const visibleIds = getFilteredOutreachHouseholds().map((household) => household.id);
+    const selected = new Set(state.selectedOutreachIds);
+    visibleIds.forEach((id) => event.target.checked ? selected.add(id) : selected.delete(id));
+    state.selectedOutreachIds = [...selected];
+    renderOutreachWorkspace();
+  });
+  document.getElementById("outreach-add-selected").addEventListener("click", addSelectedOutreachToMailingPlan);
+  document.getElementById("outreach-clear-selection").addEventListener("click", () => {
+    state.selectedOutreachIds = [];
+    renderOutreachWorkspace();
+  });
   document.getElementById("outreach-rows").addEventListener("click", (event) => {
+    const selection = event.target.closest("[data-select-outreach]");
+    if (selection) {
+      setOutreachSelection(selection.dataset.selectOutreach, selection.checked);
+      return;
+    }
     const action = event.target.closest("[data-outreach-action]");
     if (action) {
       advanceOutreachPlan(action.dataset.outreachId);
@@ -1263,7 +1324,7 @@ function bindEvents() {
     renderOutreachWorkspace();
   });
   document.getElementById("outreach-rows").addEventListener("keydown", (event) => {
-    if (event.target.closest("button")) return;
+    if (event.target.closest("button, input")) return;
     if (event.key !== "Enter" && event.key !== " ") return;
     const row = event.target.closest("tr[data-outreach-id]");
     if (!row) return;

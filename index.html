@@ -342,19 +342,25 @@
           <section class="outreach-queue-card" aria-label="Synthetic outreach audience">
             <div class="queue-header outreach-queue-header">
               <div><h2>Households represented in these groups</h2><p id="outreach-summary">Loading synthetic household patterns…</p></div>
-              <label class="search-field"><span aria-hidden="true">⌕</span><span class="sr-only">Search synthetic households</span><input id="outreach-search" type="search" placeholder="Search ID, area, or tract"></label>
             </div>
-            <div class="outreach-filters" aria-label="Outreach filters">
-              <label><span class="sr-only">Filter by audience tier</span><select id="outreach-tier-filter"><option value="market-first">Market first</option><option value="all">All planning tiers</option><option value="consider-next">Consider next</option></select></label>
-              <label><span class="sr-only">Filter by audience group</span><select id="outreach-group-filter"><option value="all">All audience groups</option></select></label>
-              <label><span class="sr-only">Filter by household size</span><select id="outreach-size-filter"><option value="all">4–5 people</option><option value="4">4 people</option><option value="5">5 people</option></select></label>
-              <label><span class="sr-only">Filter by planning area</span><select id="outreach-area-filter"><option value="all">All planning areas</option></select></label>
-              <label><span class="sr-only">Filter by outreach channel</span><select id="outreach-channel-filter"><option value="all">All channels</option></select></label>
-              <label><span class="sr-only">Sort outreach audience</span><select id="outreach-sort"><option value="fit">Best target fit</option><option value="gap">Smallest affordability gap</option><option value="income">Highest income first</option><option value="area">Planning area</option></select></label>
+            <div class="outreach-bulk-toolbar">
+              <div><strong id="outreach-selected-count">0 selected</strong><span>Select household patterns below to build a mailing plan.</span></div>
+              <div class="outreach-bulk-actions"><button class="primary-button" id="outreach-add-selected" type="button" disabled>Add selected to mailing plan</button><button class="text-button" id="outreach-clear-selection" type="button" disabled>Clear selection</button><label><span class="sr-only">Sort outreach audience</span><select id="outreach-sort"><option value="fit">Sort: best target fit</option><option value="gap">Sort: smallest gap</option><option value="income">Sort: highest income</option><option value="area">Sort: planning area</option></select></label></div>
             </div>
             <div class="outreach-table-wrap">
               <table class="outreach-table">
-                <thead><tr><th scope="col">Synthetic household</th><th scope="col">Family</th><th scope="col">Income position</th><th scope="col">Planning area</th><th scope="col">Suggested channel</th><th scope="col">Campaign plan</th></tr></thead>
+                <thead>
+                  <tr><th class="outreach-select-column" scope="col"><label><span class="sr-only">Select all visible household patterns</span><input id="outreach-select-all" type="checkbox"></label></th><th scope="col">Synthetic household</th><th scope="col">Family &amp; group</th><th scope="col">Income position</th><th scope="col">Planning area</th><th scope="col">Suggested channel</th><th scope="col">Mailing status</th></tr>
+                  <tr class="outreach-column-filters">
+                    <th></th>
+                    <th><label><span class="sr-only">Search household ID, area, or tract</span><input id="outreach-search" type="search" placeholder="Search ID or tract"><select id="outreach-tier-filter"><option value="market-first">Market first</option><option value="all">All tiers</option><option value="consider-next">Consider next</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by audience group and household size</span><select id="outreach-group-filter"><option value="all">All audience groups</option></select><select id="outreach-size-filter"><option value="all">4–5 people</option><option value="4">4 people</option><option value="5">5 people</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by income band</span><select id="outreach-income-filter"><option value="all">All income bands</option><option value="75-110">$75K–$110K</option><option value="110-150">$110K–$150K</option><option value="outside-market">Outside market-first band</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by planning area</span><select id="outreach-area-filter"><option value="all">All planning areas</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by outreach channel</span><select id="outreach-channel-filter"><option value="all">All channels</option></select></label></th>
+                    <th><label><span class="sr-only">Filter by mailing status</span><select id="outreach-status-filter"><option value="all">All mailing statuses</option><option value="not-planned">Not on list</option><option value="campaign-ready">Mailing plan</option><option value="partner-assigned">Partner list</option></select></label></th>
+                  </tr>
+                </thead>
                 <tbody id="outreach-rows"></tbody>
               </table>
               <div class="empty-state compact-empty" id="outreach-empty" hidden><h3>No household patterns found</h3><p>Try changing the outreach filters.</p></div>

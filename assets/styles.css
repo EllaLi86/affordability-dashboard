@@ -706,14 +706,29 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
 .outreach-queue-card,
 .outreach-insight-card { overflow: hidden; border: 1px solid var(--line); border-radius: 9px; background: white; box-shadow: 0 2px 6px rgba(24, 47, 66, 0.04); }
 .outreach-queue-header { padding-bottom: 15px; }
-.outreach-filters { display: grid; grid-template-columns: repeat(6, minmax(110px, 1fr)); gap: 7px; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line); background: #fafbfb; padding: 10px 14px; }
-.outreach-filters select { width: 100%; height: 35px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--slate); padding: 0 27px 0 8px; font-size: 10px; }
+.outreach-bulk-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 14px; border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line); background: #fafbfb; padding: 10px 14px; }
+.outreach-bulk-toolbar > div:first-child { display: grid; }
+.outreach-bulk-toolbar > div:first-child strong { color: var(--navy-950); font-size: 11px; }
+.outreach-bulk-toolbar > div:first-child span { color: var(--muted); font-size: 8px; }
+.outreach-bulk-actions { display: flex; align-items: center; gap: 8px; }
+.outreach-bulk-actions .primary-button { min-height: 34px; padding: 0 12px; font-size: 9px; }
+.outreach-bulk-actions .text-button:disabled { cursor: default; color: #a8b5bd; }
+.outreach-bulk-actions select { height: 34px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--slate); padding: 0 27px 0 8px; font-size: 9px; }
 .outreach-table-wrap { min-width: 0; overflow-x: auto; }
-.outreach-table { width: 100%; min-width: 1020px; border-collapse: collapse; text-align: left; }
+.outreach-table { width: 100%; min-width: 1160px; border-collapse: collapse; text-align: left; }
 .outreach-table th { height: 42px; border-bottom: 1px solid var(--line-soft); background: #fafbfb; color: var(--muted); padding: 0 11px; font-size: 9px; letter-spacing: 0.045em; text-transform: uppercase; }
 .outreach-table td { height: 88px; border-bottom: 1px solid var(--line-soft); padding: 10px 11px; vertical-align: middle; }
+.outreach-column-filters th { height: auto; border-bottom-color: var(--line); background: #f4f7f8; padding: 7px 6px; vertical-align: top; text-transform: none; letter-spacing: 0; }
+.outreach-column-filters label { display: grid; gap: 4px; }
+.outreach-column-filters input,
+.outreach-column-filters select { width: 100%; height: 29px; min-width: 0; border: 1px solid #d3dde2; border-radius: 5px; background: white; color: var(--slate); padding: 0 22px 0 6px; font-size: 8px; }
+.outreach-column-filters input { padding-right: 6px; }
+.outreach-select-column { width: 42px; padding-right: 6px !important; padding-left: 12px !important; text-align: center; }
+.outreach-select-column label { display: grid; place-items: center; }
+.outreach-select-column input { width: 15px; height: 15px; accent-color: var(--teal-600); }
 .outreach-table tbody tr { cursor: pointer; transition: background 120ms ease; }
 .outreach-table tbody tr:hover { background: #f7faf9; }
+.outreach-table tbody tr.mail-selected { background: #f3f8ee; }
 .outreach-table tbody tr.selected { background: #edf7f6; box-shadow: inset 3px 0 0 var(--teal-600); }
 .outreach-table tbody tr:focus { outline: 2px solid var(--teal-600); outline-offset: -2px; }
 .outreach-id-cell { display: grid; min-width: 130px; justify-items: start; gap: 2px; }
@@ -882,7 +897,6 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
   .buyer-filters { grid-template-columns: 1fr 1fr; }
   .buyer-list { display: flex; max-height: none; overflow-x: auto; }
   .buyer-row { min-width: 260px; border-right: 1px solid var(--line-soft); border-bottom: 0; }
-  .outreach-filters { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -936,7 +950,8 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
   .readiness-list,
   .mortgage-program-grid { grid-template-columns: 1fr; }
   .outreach-notice button { margin-left: 32px; }
-  .outreach-filters { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .outreach-bulk-toolbar { align-items: stretch; flex-direction: column; }
+  .outreach-bulk-actions { flex-wrap: wrap; }
   .outreach-insights { grid-template-columns: 1fr; }
   .outreach-group-grid { grid-template-columns: 1fr; }
 }
@@ -957,7 +972,6 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
   .mortgage-buyer-head { flex-direction: column; }
   .buyer-head-actions { justify-items: start; }
   .buyer-head-badges { justify-content: flex-start; }
-  .outreach-filters,
   .outreach-detail-facts { grid-template-columns: 1fr; }
 }
 

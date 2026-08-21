@@ -99,6 +99,11 @@ the synthetic source contains no names, addresses, email, phone, or contact cons
 would require a separate authorized contact system to match consented residents to the selected
 audience definitions.
 
+The representative-household table includes filters directly beneath each column for audience tier,
+group, household size, income band, planning area, channel, and mailing status. Staff can select
+individual visible rows, select all filtered rows, and add the selection to the mailing plan in one
+bulk action. Selection and planning remain anonymous prototype behavior.
+
 ## Site planning map
 
 - **Color** = the % of households in that PUMA that are economically vulnerable
