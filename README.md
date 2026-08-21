@@ -16,22 +16,29 @@ stats. Built from the San Diego HLB Hackathon 2024 dataset.
   and median required income.
 - **Click/hover** also updates the detail panel on the right with the same figures plus the
   median annual income gap for vulnerable households in that area.
+- **Vulnerability rank vs. low-mid income rank** — a scatter chart comparing each PUMA's rank by
+  raw vulnerability against its rank by low-mid income priority, showing which areas move once you
+  shift focus from "most vulnerable overall" to "closest to self-sufficient."
+- **Age composition** — real Census age data for our low-mid income target PUMA (Rancho Bernardo &
+  Poway), used to inform outreach method (mail vs. digital).
 
 ## Project structure
 
+```
 ```
 .
 ├── index.html                       # the whole dashboard (Plotly.js + Chart.js + vanilla JS, no build step)
 ├── data/
 │   ├── puma_stats.json              # precomputed PUMA-level summary
 │   ├── low_mid_income_priority.json # PUMAs ranked by low-mid income (near-miss) priority
-│   └── tract_age_demographics.json  # real Census age data for Chula Vista/National City tracts
+│   └── tract_age_demographics.json  # real Census age data for Rancho Bernardo & Poway tracts
 ├── scripts/
 │   ├── build_data.py                # regenerates data/puma_stats.json from the raw CSV
 │   ├── build_tract_affordability.py # regenerates census-tract-level affordability stats
-│   ├── rank_low_mid_income.py       # regenerates data/low_mid_income_priority.csv/.json
+│   ├── rank_low_mid_income.py       # regenerates data/low_mid_income_priority.json
 │   └── fetch_age_demographics.py    # regenerates data/tract_age_demographics.json (needs a Census API key)
 └── README.md
+```
 ```
 
 The full ~175MB source CSV never ships in this repo or the browser — only the small aggregated
@@ -63,29 +70,35 @@ python scripts/build_data.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.c
 
 This overwrites `data/puma_stats.json`. Commit the updated file — nothing else needs to change.
 
-## Low-mid income & age targeting
+## Additional targeting views
 
-Two additional views beyond the base vulnerability map:
+Two more lenses beyond the base vulnerability map:
 
 - **Low-mid income priority** (`data/low_mid_income_priority.json`) — PUMAs re-ranked by share of
   "near-miss" households (80–100% of required income) instead of raw vulnerability rate, since
   near-miss households are less likely to already be served by existing low-income assistance.
+  Chula Vista (West) & National City — our #1 priority PUMA by raw vulnerability — actually ranks
+  **last (#22)** here, since its vulnerable households are mostly deep-need, not near-miss.
+  Rancho Bernardo & Poway ranks #1 instead (28.3% near-miss share).
 - **Age composition** (`data/tract_age_demographics.json`) — real Census ACS 5-Year age data
-  (table S0101) for Chula Vista/National City, since the synthetic HLB dataset has no real age
-  breakdown.
+  (table S0101) for Rancho Bernardo & Poway specifically, our #1 priority PUMA for a low-mid
+  income program, since the synthetic HLB dataset has no real age breakdown. Used to inform
+  outreach method (mail vs. digital) there.
 
 ```bash
 python scripts/rank_low_mid_income.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
 ```
 
-This overwrites `data/low_mid_income_priority.csv/.json`.
+This overwrites `data/low_mid_income_priority.json`.
 
 ```bash
 python scripts/fetch_age_demographics.py --api-key YOUR_CENSUS_API_KEY
 ```
 
-Requires a free [Census API key](https://api.census.gov/data/key_signup.html). Overwrites
-`data/tract_age_demographics.json`.
+Requires a free [Census API key](https://api.census.gov/data/key_signup.html) and
+`tract_level_affordability.csv` (regenerate with `scripts/build_tract_affordability.py` if
+missing). Overwrites `data/tract_age_demographics.json`. Add `--puma 07330` to target a different
+PUMA instead of the default (Rancho Bernardo & Poway).
 
 ## Data notes / caveats
 
