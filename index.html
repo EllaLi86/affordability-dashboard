@@ -71,15 +71,15 @@
           <div>
             <p class="eyebrow">APPLICATION OPERATIONS</p>
             <h1>Application review</h1>
-            <p>Review households in a consistent order, resolve missing information, and record each decision.</p>
+            <p>Review home-purchase applications, verify program criteria, and document each eligibility decision.</p>
           </div>
           <button class="primary-button" id="open-intake" type="button"><span aria-hidden="true">＋</span> Add application</button>
         </div>
 
         <div class="prototype-notice" role="note">
           <span class="notice-icon" aria-hidden="true">i</span>
-          <div><strong>Prototype with synthetic demonstration records.</strong> Priority supports review order only. Staff determine eligibility and final outcomes.</div>
-          <button type="button" id="open-method">View scoring method</button>
+          <div><strong>Prototype with synthetic demonstration records.</strong> Eligibility checks support consistent pre-screening. Staff verify evidence and make every final determination.</div>
+          <button type="button" id="open-method">View eligibility rules</button>
         </div>
 
         <div class="metric-grid" id="application-metrics" aria-label="Application queue summary"></div>
@@ -99,7 +99,7 @@
               <label class="select-field">
                 <span class="sr-only">Sort applications</span>
                 <select id="sort-applications">
-                  <option value="priority">Priority: highest first</option>
+                  <option value="eligibility">Eligibility: strongest match</option>
                   <option value="oldest">Oldest application first</option>
                   <option value="newest">Newest application first</option>
                   <option value="name">Applicant name</option>
@@ -114,16 +114,16 @@
               <button class="status-tab" type="button" data-status="new" role="tab" aria-selected="false">New <span id="count-new">0</span></button>
               <button class="status-tab" type="button" data-status="in-review" role="tab" aria-selected="false">In review <span id="count-in-review">0</span></button>
               <button class="status-tab" type="button" data-status="needs-info" role="tab" aria-selected="false">Needs info <span id="count-needs-info">0</span></button>
-              <button class="status-tab" type="button" data-status="approved" role="tab" aria-selected="false">Approved <span id="count-approved">0</span></button>
+              <button class="status-tab" type="button" data-status="eligible" role="tab" aria-selected="false">Eligible <span id="count-eligible">0</span></button>
             </div>
             <div class="secondary-filters">
               <label>
-                <span class="sr-only">Filter by priority</span>
-                <select id="priority-filter">
-                  <option value="all">All priorities</option>
-                  <option value="urgent">Urgent</option>
-                  <option value="high">High</option>
-                  <option value="standard">Standard</option>
+                <span class="sr-only">Filter by eligibility result</span>
+                <select id="eligibility-filter">
+                  <option value="all">All eligibility results</option>
+                  <option value="likely-eligible">Likely eligible</option>
+                  <option value="needs-verification">Needs verification</option>
+                  <option value="policy-review">Policy review</option>
                 </select>
               </label>
               <label>
@@ -147,7 +147,7 @@
                     <th scope="col">Household</th>
                     <th scope="col">Income coverage</th>
                     <th scope="col">Status</th>
-                    <th scope="col">Priority</th>
+                    <th scope="col">Eligibility pre-screen</th>
                     <th scope="col"><span class="sr-only">Open record</span></th>
                   </tr>
                 </thead>
@@ -212,7 +212,7 @@
           <span class="placeholder-mark" aria-hidden="true">⌂</span>
           <p class="eyebrow">PROGRAM OVERVIEW</p>
           <h1>One place to operate the housing program</h1>
-          <p>This area is ready for program milestones, unit inventory, placements, and outcome reporting.</p>
+          <p>This area is ready for construction milestones, home inventory, purchase readiness, closings, resale compliance, and outcome reporting.</p>
           <button class="primary-button" type="button" data-go-to="applications">Review applications</button>
         </div>
       </section>
@@ -254,17 +254,30 @@
       </div>
 
       <div class="form-section">
-        <h3>Financial and housing need</h3>
+        <h3>Home purchase eligibility</h3>
         <div class="form-grid">
           <label>Annual household income<input name="income" type="number" min="0" step="500" value="42000" required></label>
           <label>Modeled annual HLB<input name="hlb" type="number" min="1" step="500" value="118000" required></label>
-          <label class="full-field">Current housing situation
-            <select name="housing" required>
-              <option value="eviction">Eviction filed or move-out notice</option>
-              <option value="unhoused">Unhoused</option>
-              <option value="temporary">Temporary or doubled-up housing</option>
-              <option value="severe-burden">Paying over 50% of income toward rent</option>
-              <option value="stable">Stable housing</option>
+          <label>Residential property ownership
+            <select name="ownership" required>
+              <option value="none">Does not own a home</option>
+              <option value="inadequate">Owns a home that may not meet household needs</option>
+              <option value="owns-suitable">Owns a suitable home</option>
+              <option value="unknown">Not yet confirmed</option>
+            </select>
+          </label>
+          <label>Intended use of purchased home
+            <select name="primaryResidence" required>
+              <option value="true">Primary residence</option>
+              <option value="unknown">Not yet confirmed</option>
+              <option value="false">Not a primary residence</option>
+            </select>
+          </label>
+          <label class="full-field">Purchase readiness
+            <select name="purchaseReadiness" required>
+              <option value="prequalified">Financing or assistance pathway confirmed</option>
+              <option value="counseling">Needs homebuyer counseling</option>
+              <option value="unknown">Not yet assessed</option>
             </select>
           </label>
           <label class="full-field">Planning area
@@ -279,9 +292,9 @@
         </div>
       </div>
 
-      <div class="score-preview" aria-live="polite">
-        <div><span>Estimated review priority</span><strong id="intake-priority-label">High priority</strong></div>
-        <span class="score-orb" id="intake-score">—</span>
+      <div class="eligibility-preview" aria-live="polite">
+        <div><span>Initial pre-screen result</span><strong id="intake-eligibility-label">Needs verification</strong></div>
+        <span class="check-orb" id="intake-checks">—</span>
       </div>
 
       <div class="dialog-actions">
@@ -294,19 +307,22 @@
   <dialog id="method-dialog" class="app-dialog method-dialog">
     <div class="dialog-header">
       <div>
-        <p class="eyebrow">EXPLAINABLE REVIEW ORDER</p>
-        <h2>How priority is calculated</h2>
-        <p>The 100-point score helps reviewers see the most time-sensitive applications first.</p>
+        <p class="eyebrow">EXPLAINABLE ELIGIBILITY</p>
+        <h2>How the eligibility pre-screen works</h2>
+        <p>Each rule produces a visible pass, pending, or policy-review result. There is no urgency score.</p>
       </div>
       <button class="dialog-close" type="button" data-close-dialog="method-dialog" aria-label="Close">×</button>
     </div>
     <div class="method-list">
-      <article><strong>40</strong><div><h3>Financial gap</h3><p>How far reported income falls below the household's modeled basic-needs threshold.</p></div></article>
-      <article><strong>30</strong><div><h3>Housing instability</h3><p>Documented homelessness, eviction risk, temporary housing, or severe rent burden.</p></div></article>
-      <article><strong>18</strong><div><h3>Household needs</h3><p>Children, very young children, single-caregiver households, and larger households.</p></div></article>
-      <article><strong>12</strong><div><h3>Time waiting</h3><p>One point for each completed week since submission, capped at twelve weeks.</p></div></article>
+      <article><strong>01</strong><div><h3>Income fit</h3><p>Reported household income is below the modeled Household Living Budget threshold.</p></div></article>
+      <article><strong>02</strong><div><h3>County residency</h3><p>San Diego County residency is supported by accepted documentation.</p></div></article>
+      <article><strong>03</strong><div><h3>Property ownership</h3><p>The household does not already own a suitable residential property.</p></div></article>
+      <article><strong>04</strong><div><h3>Primary residence</h3><p>The household intends to occupy the purchased home as its primary residence.</p></div></article>
+      <article><strong>05</strong><div><h3>Household and unit fit</h3><p>Household size fits the family-sized homes currently planned for the program.</p></div></article>
+      <article><strong>06</strong><div><h3>Purchase readiness</h3><p>A financing, public-assistance, or homebuyer-counseling pathway has been confirmed.</p></div></article>
+      <article><strong>07</strong><div><h3>Evidence complete</h3><p>Identity, income, residency, property-ownership, and purchase-readiness evidence has been verified.</p></div></article>
     </div>
-    <div class="guardrail-box"><strong>Built-in guardrails</strong><p>The score excludes name, language, geography, race, gender, disability, and other protected traits. It never auto-approves, denies, or determines eligibility. Staff can see every contributing factor and must record a reason for final decisions.</p></div>
+    <div class="guardrail-box"><strong>Draft policy guardrails</strong><p>These prototype rules are not legal program criteria. Before launch, housing counsel must replace the modeled HLB test with the adopted income standard and confirm ownership, residency, occupancy, and household-size rules. Name, language, race, gender, disability, and other protected traits are never used.</p></div>
     <div class="dialog-actions"><button class="primary-button" type="button" data-close-dialog="method-dialog">Got it</button></div>
   </dialog>
 

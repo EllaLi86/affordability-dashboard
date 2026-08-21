@@ -11,27 +11,35 @@ source records used for the map are synthetic households, not identifiable peopl
 
 The default view gives program staff a working application queue with:
 
-- Search, status, household-size, and priority filters.
+- Search, status, household-size, and eligibility-result filters.
 - A complete household panel with reviewer-controlled document verification.
-- Reviewer notes and workflow actions for `New`, `In review`, `Needs info`, and `Approved`.
+- Reviewer notes and workflow actions for `New`, `In review`, `Needs info`, and `Eligible`.
 - A manual-intake form for paper, phone, or partner-assisted applications.
 - Device-local persistence for demo status changes, notes, and newly added records.
 - Keyboard-accessible queue rows, responsive layouts, and clear data-use warnings.
 
-### Explainable review order
+### Explainable eligibility pre-screen
 
-Priority is a transparent 100-point review-order score, not an eligibility or approval model:
+The dashboard uses independent, visible checks instead of an urgency score or opaque ranking:
 
-| Factor | Maximum | What it measures |
-|---|---:|---|
-| Financial gap | 40 | Reported income compared with the modeled household living budget |
-| Housing instability | 30 | Homelessness, eviction risk, temporary housing, or severe rent burden |
-| Household needs | 18 | Children, very young children, single caregivers, and larger households |
-| Time waiting | 12 | One point per completed week, capped at twelve weeks |
+| Draft rule | What it checks |
+|---|---|
+| Income fit | Reported income is below the modeled household living budget |
+| County residency | Accepted San Diego County residency evidence is verified |
+| Property ownership | The household does not already own a suitable residential property |
+| Primary residence | The purchased home will be the household's primary residence |
+| Household and unit fit | Household size fits the family-sized homes currently planned |
+| Purchase readiness | A financing, assistance, or homebuyer-counseling pathway is confirmed |
+| Evidence complete | Identity, income, residency, ownership, and purchase-readiness evidence is verified |
 
-Name, preferred language, geography, and protected characteristics do not affect the score. Every
-factor is shown to the reviewer. The prototype never automatically approves, denies, or determines
-eligibility, and approval is disabled until all required documents and a reviewer note are present.
+The result is `Likely eligible`, `Needs verification`, or `Policy review`. The prototype never
+automatically approves or denies. A reviewer must verify every required document and save an
+eligibility note before marking a household eligible. Name, preferred language, race, gender,
+disability, and other protected characteristics are not used.
+
+The HLB comparison is a prototype screening rule, not an adopted legal income standard. A real
+program must replace it with criteria approved by housing counsel, such as the program's adopted
+AMI limits, ownership exceptions, occupancy rules, and resale restrictions.
 
 ## Site planning map
 
@@ -49,7 +57,7 @@ eligibility, and approval is disabled until all required documents and a reviewe
 .
 ├── index.html                 # accessible application shell and views
 ├── assets/
-│   ├── app.js                 # review workflow, priority logic, and map behavior
+│   ├── app.js                 # eligibility workflow, review rules, and map behavior
 │   └── styles.css             # responsive dashboard design
 ├── data/
 │   ├── applications.json      # fictional application records for the prototype

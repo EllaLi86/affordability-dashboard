@@ -1,14 +1,14 @@
-const STORAGE_KEY = "housing-access-demo-state-v1";
+const STORAGE_KEY = "housing-access-demo-state-v2";
 const DEMO_START_DATE = new Date("2026-08-20T12:00:00");
 
 const state = {
   applications: [],
   selectedId: null,
   status: "all",
-  priority: "all",
+  eligibility: "all",
   size: "all",
   search: "",
-  sort: "priority",
+  sort: "eligibility",
   mapLoaded: false,
   toastTimer: null,
 };
@@ -17,22 +17,28 @@ const statusLabels = {
   "new": "New",
   "in-review": "In review",
   "needs-info": "Needs info",
-  "approved": "Approved",
+  "eligible": "Eligible",
 };
 
-const housingLabels = {
-  "unhoused": "Currently unhoused",
-  "eviction": "Eviction or move-out notice",
-  "temporary": "Temporary / doubled up",
-  "severe-burden": "Severe rent burden",
-  "stable": "Stable housing",
+const eligibilityLabels = {
+  "likely-eligible": "Likely eligible",
+  "needs-verification": "Needs verification",
+  "policy-review": "Policy review",
+};
+
+const ownershipLabels = {
+  "none": "No home owned",
+  "inadequate": "Existing home may not meet needs",
+  "owns-suitable": "Suitable home already owned",
+  "unknown": "Not yet confirmed",
 };
 
 const documentLabels = {
   identity: "Identity documentation",
   income: "Income verification",
   residency: "County residency",
-  housing: "Housing situation evidence",
+  ownership: "Property ownership declaration",
+  financing: "Purchase-readiness pathway",
 };
 
 function escapeHtml(value) {
@@ -53,26 +59,76 @@ function currentReviewDate() {
   return now > DEMO_START_DATE ? now : DEMO_START_DATE;
 }
 
-function calculatePriority(application) {
+function evaluateEligibility(application) {
   const coverage = application.hlb > 0 ? application.income / application.hlb : 1;
-  const financial = Math.round(clamp((1 - coverage) * 53.34, 0, 40));
-  const housingScores = { "unhoused": 30, "eviction": 25, "temporary": 18, "severe-burden": 12, "stable": 0 };
-  const housing = housingScores[application.housing] ?? 0;
   const householdSize = Number(application.adults) + Number(application.children);
-  let household = 0;
-  if (application.children > 0) household += 5;
-  if (application.children > 0 && application.youngestChild <= 5) household += 5;
-  if (application.adults === 1 && application.children > 0) household += 4;
-  if (householdSize >= 5) household += 4;
-  household = Math.min(household, 18);
+  const missingDocuments = Object.entries(application.documents || {}).filter(([, complete]) => !complete).map(([key]) => documentLabels[key]);
+  const ownershipStatus = application.ownership === "none"
+    ? "pass"
+    : application.ownership === "owns-suitable"
+      ? "fail"
+      : application.ownership === "inadequate"
+        ? "review"
+        : "pending";
+  const occupancyStatus = application.primaryResidence === true ? "pass" : application.primaryResidence === false ? "fail" : "pending";
 
-  const submitted = new Date(`${application.submitted}T12:00:00`);
-  const daysWaiting = Math.max(0, Math.floor((currentReviewDate() - submitted) / 86400000));
-  const wait = Math.min(12, Math.floor(daysWaiting / 7));
-  const total = Math.min(100, financial + housing + household + wait);
-  const level = total >= 80 ? "urgent" : total >= 60 ? "high" : "standard";
+  const checks = [
+    {
+      id: "income",
+      label: "Income fit",
+      status: coverage < 1 ? "pass" : "fail",
+      detail: coverage < 1
+        ? `Reported income is ${Math.round(coverage * 100)}% of the modeled HLB.`
+        : "Reported income is not below the modeled HLB.",
+    },
+    {
+      id: "residency",
+      label: "County residency",
+      status: application.documents?.residency ? "pass" : "pending",
+      detail: application.documents?.residency ? "County residency evidence verified." : "County residency evidence is still required.",
+    },
+    {
+      id: "ownership",
+      label: "Property ownership",
+      status: ownershipStatus,
+      detail: ownershipLabels[application.ownership] || ownershipLabels.unknown,
+    },
+    {
+      id: "occupancy",
+      label: "Primary residence",
+      status: occupancyStatus,
+      detail: occupancyStatus === "pass" ? "Applicant intends to occupy the purchased home." : occupancyStatus === "fail" ? "Applicant does not intend to use the home as a primary residence." : "Primary-residence intent is not yet confirmed.",
+    },
+    {
+      id: "unit-fit",
+      label: "Household and unit fit",
+      status: householdSize >= 4 && householdSize <= 6 ? "pass" : "review",
+      detail: householdSize >= 4 && householdSize <= 6 ? `${householdSize}-person household fits planned family-sized homes.` : `${householdSize}-person household requires an inventory policy review.`,
+    },
+    {
+      id: "purchase-readiness",
+      label: "Purchase readiness",
+      status: application.purchaseReadiness === "prequalified" ? "pass" : "pending",
+      detail: application.purchaseReadiness === "prequalified"
+        ? "A financing or public-assistance pathway is documented."
+        : application.purchaseReadiness === "counseling"
+          ? "Homebuyer counseling is the next step toward a purchase pathway."
+          : "Financing, assistance, or counseling pathway is not yet assessed.",
+    },
+    {
+      id: "evidence",
+      label: "Evidence complete",
+      status: missingDocuments.length ? "pending" : "pass",
+      detail: missingDocuments.length ? `Still needed: ${missingDocuments.join(", ")}.` : "All required evidence has been verified.",
+    },
+  ];
 
-  return { total, level, financial, housing, household, wait, coverage, daysWaiting };
+  const hasMismatch = checks.some((check) => check.status === "fail" || check.status === "review");
+  const hasPending = checks.some((check) => check.status === "pending");
+  const result = hasMismatch ? "policy-review" : hasPending ? "needs-verification" : "likely-eligible";
+  const passed = checks.filter((check) => check.status === "pass").length;
+
+  return { result, checks, passed, total: checks.length, coverage, missingDocuments };
 }
 
 function formatMoney(value) {
@@ -90,10 +146,6 @@ function formatDate(dateString) {
 
 function initials(name) {
   return name.split(/\s+/).map((part) => part[0]).slice(0, 2).join("").toUpperCase();
-}
-
-function priorityLabel(level) {
-  return level === "urgent" ? "Urgent" : level === "high" ? "High" : "Standard";
 }
 
 function loadStoredState(applications) {
@@ -131,39 +183,42 @@ function saveStoredState() {
 function getFilteredApplications() {
   const query = state.search.trim().toLowerCase();
   const filtered = state.applications.filter((application) => {
-    const score = calculatePriority(application);
+    const assessment = evaluateEligibility(application);
     const householdSize = application.adults + application.children;
     const statusMatch = state.status === "all" || application.status === state.status;
-    const priorityMatch = state.priority === "all" || score.level === state.priority;
+    const eligibilityMatch = state.eligibility === "all" || assessment.result === state.eligibility;
     const sizeMatch = state.size === "all"
       || (state.size === "1-3" && householdSize <= 3)
       || (state.size === "4-5" && householdSize >= 4 && householdSize <= 5)
       || (state.size === "6+" && householdSize >= 6);
     const searchMatch = !query || application.applicant.toLowerCase().includes(query) || application.id.toLowerCase().includes(query);
-    return statusMatch && priorityMatch && sizeMatch && searchMatch;
+    return statusMatch && eligibilityMatch && sizeMatch && searchMatch;
   });
 
   return filtered.sort((a, b) => {
     if (state.sort === "oldest") return a.submitted.localeCompare(b.submitted);
     if (state.sort === "newest") return b.submitted.localeCompare(a.submitted);
     if (state.sort === "name") return a.applicant.localeCompare(b.applicant);
-    return calculatePriority(b).total - calculatePriority(a).total || a.submitted.localeCompare(b.submitted);
+    const eligibilityRank = { "likely-eligible": 0, "needs-verification": 1, "policy-review": 2 };
+    const aAssessment = evaluateEligibility(a);
+    const bAssessment = evaluateEligibility(b);
+    return eligibilityRank[aAssessment.result] - eligibilityRank[bAssessment.result]
+      || bAssessment.passed - aAssessment.passed
+      || a.submitted.localeCompare(b.submitted);
   });
 }
 
 function renderMetrics() {
-  const activeApplications = state.applications.filter((application) => application.status !== "approved");
-  const urgentCount = activeApplications.filter((application) => calculatePriority(application).level === "urgent").length;
+  const activeApplications = state.applications.filter((application) => application.status !== "eligible");
+  const likelyEligible = activeApplications.filter((application) => evaluateEligibility(application).result === "likely-eligible").length;
+  const needsVerification = activeApplications.filter((application) => evaluateEligibility(application).result === "needs-verification").length;
   const missingInfo = state.applications.filter((application) => application.status === "needs-info").length;
-  const averageWait = activeApplications.length
-    ? Math.round(activeApplications.reduce((sum, application) => sum + calculatePriority(application).daysWaiting, 0) / activeApplications.length)
-    : 0;
 
   document.getElementById("application-metrics").innerHTML = `
     <article class="metric-card"><span>Active applications</span><strong>${activeApplications.length}</strong><small>${state.applications.length} total received</small></article>
-    <article class="metric-card emphasis"><span>Urgent review</span><strong>${urgentCount}</strong><small>highest priority band</small></article>
+    <article class="metric-card emphasis"><span>Likely eligible</span><strong>${likelyEligible}</strong><small>all draft rules currently pass</small></article>
+    <article class="metric-card"><span>Needs verification</span><strong>${needsVerification}</strong><small>evidence or attestation pending</small></article>
     <article class="metric-card"><span>Waiting on information</span><strong>${missingInfo}</strong><small>applicant follow-up needed</small></article>
-    <article class="metric-card"><span>Average wait</span><strong>${averageWait} days</strong><small>active applications</small></article>
   `;
 
   Object.keys(statusLabels).forEach((status) => {
@@ -188,10 +243,10 @@ function renderTable() {
   summary.textContent = `${applications.length} of ${state.applications.length} applications shown`;
   empty.hidden = applications.length !== 0;
   rows.innerHTML = applications.map((application) => {
-    const score = calculatePriority(application);
+    const assessment = evaluateEligibility(application);
     const householdSize = application.adults + application.children;
     const isSelected = application.id === state.selectedId;
-    const coveragePercent = Math.round(score.coverage * 100);
+    const coveragePercent = Math.round(assessment.coverage * 100);
     return `
       <tr data-application-id="${escapeHtml(application.id)}" class="${isSelected ? "selected" : ""}" tabindex="0" aria-selected="${isSelected}">
         <td>
@@ -208,7 +263,7 @@ function renderTable() {
           </div>
         </td>
         <td><span class="badge ${application.status}">${statusLabels[application.status]}</span></td>
-        <td><div class="priority-cell"><span class="priority-score">${score.total}</span><span class="badge ${score.level}">${priorityLabel(score.level)}</span></div></td>
+        <td><div class="eligibility-cell"><span class="checks-count">${assessment.passed}/${assessment.total}</span><span class="badge ${assessment.result}">${eligibilityLabels[assessment.result]}</span></div></td>
         <td><button class="row-arrow" type="button" tabindex="-1" aria-label="Open ${escapeHtml(application.applicant)} application">›</button></td>
       </tr>
     `;
@@ -224,23 +279,27 @@ function renderCasePanel() {
     return;
   }
 
-  const score = calculatePriority(application);
+  const assessment = evaluateEligibility(application);
   const householdSize = application.adults + application.children;
   const bedrooms = householdSize <= 2 ? 1 : householdSize <= 3 ? 2 : householdSize <= 4 ? 3 : 4;
   const completeDocuments = Object.values(application.documents).every(Boolean);
   const hasDecisionNote = Boolean(application.note && application.note.trim());
-  const primaryAction = application.status === "approved" ? "Return to review" : application.status === "new" ? "Start review" : "Mark approved";
-  const primaryActionType = application.status === "approved" ? "review" : application.status === "new" ? "review" : "approve";
-  const approveDisabled = primaryActionType === "approve" && (!completeDocuments || !hasDecisionNote);
+  const hasHardMismatch = assessment.checks.some((check) => check.status === "fail");
+  const primaryAction = application.status === "eligible" ? "Return to review" : application.status === "new" ? "Start review" : "Mark eligible";
+  const primaryActionType = application.status === "eligible" ? "review" : application.status === "new" ? "review" : "eligible";
+  const eligibilityDisabled = primaryActionType === "eligible" && (!completeDocuments || !hasDecisionNote || hasHardMismatch);
+  const eligibilityDisabledReason = hasHardMismatch
+    ? "Resolve failed core eligibility rules before marking this household eligible"
+    : "Complete all documents and save an eligibility note first";
 
   panel.innerHTML = `
     <div class="case-panel-inner">
       <div class="case-head">
         <div class="case-head-top">
           <div><h2>${escapeHtml(application.applicant)}</h2><p>${escapeHtml(application.id)} · Submitted ${formatDate(application.submitted)}</p></div>
-          <span class="score-ring" aria-label="Priority score ${score.total} out of 100">${score.total}</span>
+          <span class="eligibility-ring" aria-label="${assessment.passed} of ${assessment.total} eligibility checks passed">${assessment.passed}/${assessment.total}</span>
         </div>
-        <div class="case-badges"><span class="badge ${application.status}">${statusLabels[application.status]}</span><span class="badge ${score.level}">${priorityLabel(score.level)} priority</span></div>
+        <div class="case-badges"><span class="badge ${application.status}">${statusLabels[application.status]}</span><span class="badge ${assessment.result}">${eligibilityLabels[assessment.result]}</span></div>
       </div>
 
       <div class="case-scroll">
@@ -253,7 +312,9 @@ function renderCasePanel() {
             <div class="fact"><span>Youngest child</span><strong>${application.children ? `${application.youngestChild} years` : "—"}</strong></div>
             <div class="fact"><span>Annual income</span><strong>${formatMoney(application.income)}</strong></div>
             <div class="fact"><span>Modeled HLB</span><strong>${formatMoney(application.hlb)}</strong></div>
-            <div class="fact"><span>Housing</span><strong>${housingLabels[application.housing]}</strong></div>
+            <div class="fact"><span>Property ownership</span><strong>${ownershipLabels[application.ownership] || ownershipLabels.unknown}</strong></div>
+            <div class="fact"><span>Intended use</span><strong>${application.primaryResidence === true ? "Primary residence" : application.primaryResidence === false ? "Not a primary residence" : "Not yet confirmed"}</strong></div>
+            <div class="fact"><span>Purchase readiness</span><strong>${application.purchaseReadiness === "prequalified" ? "Pathway confirmed" : application.purchaseReadiness === "counseling" ? "Counseling needed" : "Not yet assessed"}</strong></div>
             <div class="fact"><span>Area</span><strong>${escapeHtml(application.area)}</strong></div>
             <div class="fact"><span>Language</span><strong>${escapeHtml(application.language)}</strong></div>
             <div class="fact"><span>Contact</span><strong>${escapeHtml(application.contact)}</strong></div>
@@ -261,13 +322,10 @@ function renderCasePanel() {
         </section>
 
         <section class="case-section">
-          <h3>Why this review order</h3>
-          <div class="score-explainer">This score orders the queue; it does not determine eligibility or approve an application.</div>
-          ${scoreRow("Financial gap", score.financial, 40)}
-          ${scoreRow("Housing instability", score.housing, 30)}
-          ${scoreRow("Household needs", score.household, 18)}
-          ${scoreRow("Time waiting", score.wait, 12)}
-          <button class="method-link" type="button" data-open-method>Read the complete scoring method</button>
+          <h3>Eligibility pre-screen</h3>
+          <div class="eligibility-explainer">Each draft rule is shown separately so reviewers can verify the evidence and resolve policy exceptions.</div>
+          <div class="criteria-list">${assessment.checks.map(criterionRow).join("")}</div>
+          <button class="method-link" type="button" data-open-method>Read the complete eligibility method</button>
         </section>
 
         <section class="case-section">
@@ -277,7 +335,7 @@ function renderCasePanel() {
               <button class="document-item document-toggle" type="button" data-document-key="${key}" aria-pressed="${complete}">
                 <span class="document-status ${complete ? "complete" : "missing"}">${complete ? "✓" : "!"}</span>
                 <span>${documentLabels[key]}</span>
-                <span class="badge ${complete ? "approved" : "needs-info"}">${complete ? "Verified" : "Mark received"}</span>
+                <span class="badge ${complete ? "eligible" : "needs-info"}">${complete ? "Verified" : "Mark received"}</span>
               </button>
             `).join("")}
           </div>
@@ -294,22 +352,24 @@ function renderCasePanel() {
           <div class="fact-grid">
             <div class="fact"><span>Assigned reviewer</span><strong>${escapeHtml(application.reviewer)}</strong></div>
             <div class="fact"><span>Intake channel</span><strong>${escapeHtml(application.channel)}</strong></div>
-            <div class="fact"><span>Days waiting</span><strong>${score.daysWaiting}</strong></div>
-            <div class="fact"><span>Income coverage</span><strong>${Math.round(score.coverage * 100)}%</strong></div>
+            <div class="fact"><span>Pre-screen result</span><strong>${eligibilityLabels[assessment.result]}</strong></div>
+            <div class="fact"><span>Income / modeled HLB</span><strong>${Math.round(assessment.coverage * 100)}%</strong></div>
           </div>
         </section>
       </div>
 
       <div class="case-actions">
         <button class="secondary-button" type="button" data-case-action="needs-info">Request info</button>
-        <button class="primary-button" type="button" data-case-action="${primaryActionType}" ${approveDisabled ? `disabled title="Complete all documents and save a decision note first"` : ""}>${primaryAction}</button>
+        <button class="primary-button" type="button" data-case-action="${primaryActionType}" ${eligibilityDisabled ? `disabled title="${eligibilityDisabledReason}"` : ""}>${primaryAction}</button>
       </div>
     </div>
   `;
 }
 
-function scoreRow(label, value, maximum) {
-  return `<div class="score-row"><span>${label}</span><div class="mini-bar"><i style="width:${Math.round(value / maximum * 100)}%"></i></div><strong>${value} / ${maximum}</strong></div>`;
+function criterionRow(check) {
+  const symbol = check.status === "pass" ? "✓" : check.status === "pending" ? "…" : "!";
+  const label = check.status === "pass" ? "Pass" : check.status === "pending" ? "Pending" : check.status === "review" ? "Review" : "Mismatch";
+  return `<div class="criterion-row"><span class="criterion-icon ${check.status}">${symbol}</span><div><strong>${check.label}</strong><span>${check.detail}</span></div><span class="criterion-label ${check.status}">${label}</span></div>`;
 }
 
 function renderApplications() {
@@ -337,11 +397,11 @@ function showToast(message) {
 
 function clearFilters() {
   state.status = "all";
-  state.priority = "all";
+  state.eligibility = "all";
   state.size = "all";
   state.search = "";
   document.getElementById("application-search").value = "";
-  document.getElementById("priority-filter").value = "all";
+  document.getElementById("eligibility-filter").value = "all";
   document.getElementById("size-filter").value = "all";
   document.querySelectorAll(".status-tab").forEach((tab) => {
     const active = tab.dataset.status === "all";
@@ -386,12 +446,15 @@ function updateIntakePreview() {
     youngestChild: Number(formData.get("youngestChild")) || 18,
     income: Number(formData.get("income")),
     hlb: Number(formData.get("hlb")),
-    housing: formData.get("housing"),
+    ownership: formData.get("ownership"),
+    primaryResidence: formData.get("primaryResidence") === "true" ? true : formData.get("primaryResidence") === "false" ? false : null,
+    purchaseReadiness: formData.get("purchaseReadiness"),
+    documents: { identity: false, income: false, residency: false, ownership: false, financing: false },
     submitted: currentReviewDate().toISOString().slice(0, 10),
   };
-  const score = calculatePriority(preview);
-  document.getElementById("intake-score").textContent = score.total;
-  document.getElementById("intake-priority-label").textContent = `${priorityLabel(score.level)} priority`;
+  const assessment = evaluateEligibility(preview);
+  document.getElementById("intake-checks").textContent = `${assessment.passed}/${assessment.total}`;
+  document.getElementById("intake-eligibility-label").textContent = eligibilityLabels[assessment.result];
 }
 
 function addApplication(form) {
@@ -408,14 +471,17 @@ function addApplication(form) {
     youngestChild: Number(formData.get("youngestChild")) || 18,
     income: Number(formData.get("income")),
     hlb: Number(formData.get("hlb")),
-    housing: String(formData.get("housing")),
+    housing: "not-recorded",
+    ownership: String(formData.get("ownership")),
+    primaryResidence: formData.get("primaryResidence") === "true" ? true : formData.get("primaryResidence") === "false" ? false : null,
+    purchaseReadiness: String(formData.get("purchaseReadiness")),
     puma: String(formData.get("puma")),
     area: pumaSelect.options[pumaSelect.selectedIndex].text,
     language: String(formData.get("language")),
     contact: "Not recorded",
     channel: "Manual intake",
     reviewer: "Unassigned",
-    documents: { identity: false, income: false, residency: false, housing: false },
+    documents: { identity: false, income: false, residency: false, ownership: false, financing: false },
     note: "",
   };
 
@@ -520,7 +586,7 @@ function bindEvents() {
 
   document.getElementById("application-search").addEventListener("input", (event) => { state.search = event.target.value; renderApplications(); });
   document.getElementById("sort-applications").addEventListener("change", (event) => { state.sort = event.target.value; renderApplications(); });
-  document.getElementById("priority-filter").addEventListener("change", (event) => { state.priority = event.target.value; renderApplications(); });
+  document.getElementById("eligibility-filter").addEventListener("change", (event) => { state.eligibility = event.target.value; renderApplications(); });
   document.getElementById("size-filter").addEventListener("change", (event) => { state.size = event.target.value; renderApplications(); });
   document.getElementById("clear-filters").addEventListener("click", clearFilters);
 
@@ -568,7 +634,7 @@ function bindEvents() {
     const action = actionButton.dataset.caseAction;
     if (action === "needs-info") updateApplication(state.selectedId, { status: "needs-info", reviewer: "Jordan Martinez" }, "Application moved to Needs info.");
     if (action === "review") updateApplication(state.selectedId, { status: "in-review", reviewer: "Jordan Martinez" }, "Application moved to In review.");
-    if (action === "approve") updateApplication(state.selectedId, { status: "approved", reviewer: "Jordan Martinez" }, "Application marked approved for unit matching.");
+    if (action === "eligible") updateApplication(state.selectedId, { status: "eligible", reviewer: "Jordan Martinez" }, "Household marked eligible for homebuyer counseling and future home matching.");
   });
 
   document.getElementById("open-intake").addEventListener("click", () => { openDialog("intake-dialog"); updateIntakePreview(); });
