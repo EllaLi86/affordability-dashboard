@@ -38,7 +38,28 @@ const state = {
   outreachStatuses: {},
   outreachCampaignGroups: [],
   mapLoaded: false,
+  mapMode: "outreach-groups",
+  mapContext: null,
+  selectedMapPuma: null,
   toastTimer: null,
+};
+
+const outreachGroupColors = {
+  "young-emerging": "#14837a",
+  "school-emerging": "#3d6483",
+  "young-moderate": "#d56a3a",
+  "school-moderate": "#9a6f2e",
+  "adult-emerging": "#665283",
+  "adult-moderate": "#60717d",
+};
+
+const outreachGroupMapLabels = {
+  "young-emerging": "Young · $75K–$110K",
+  "school-emerging": "School-age · $75K–$110K",
+  "young-moderate": "Young · $110K–$150K",
+  "school-moderate": "School-age · $110K–$150K",
+  "adult-emerging": "Adults · $75K–$110K",
+  "adult-moderate": "Adults · $110K–$150K",
 };
 
 const statusLabels = {
@@ -1196,6 +1217,11 @@ async function initializeMap() {
 
   try {
     if (!window.Plotly) throw new Error("The map library did not load");
+    if (!state.outreachData) {
+      const outreachResponse = await fetch("data/outreach_households.json");
+      if (!outreachResponse.ok) throw new Error(`Outreach data returned HTTP ${outreachResponse.status}`);
+      state.outreachData = await outreachResponse.json();
+    }
     const statsResponse = await fetch("data/puma_stats.json");
     if (!statsResponse.ok) throw new Error(`Planning data returned HTTP ${statsResponse.status}`);
     const statsData = await statsResponse.json();
@@ -1214,34 +1240,167 @@ async function initializeMap() {
     const geojson = await geoResponse.json();
     if (!geojson.features?.length) throw new Error("No Census boundaries were returned");
     const locations = geojson.features.map((feature) => feature.properties.PUMA);
-    const values = locations.map((code) => byCode[code]?.vulnerability_rate ?? null);
-    const hoverText = locations.map((code) => {
-      const puma = byCode[code];
-      if (!puma) return "No data";
-      return `<b>${puma.puma_name}</b><br>PUMA ${puma.puma_code}<br><b>${puma.vulnerability_rate.toFixed(1)}%</b> priced out<br>${formatNumber(puma.n_vulnerable)} of ${formatNumber(puma.n_households)} households<br>Median income: ${formatMoney(puma.median_income)}<br>Modeled required income: ${formatMoney(puma.median_hlb_year)}`;
-    });
-    const trace = { type: "choroplethmapbox", geojson, locations, z: values, featureidkey: "properties.PUMA", colorscale: [[0, "#deecea"], [0.25, "#8fc9c3"], [0.5, "#f0b490"], [0.75, "#d56a3a"], [1, "#8f332f"]], zmin: 0, zmax: 70, marker: { line: { width: 1.1, color: "#ffffff" }, opacity: 0.88 }, text: hoverText, hoverinfo: "text", colorbar: { title: { text: "% priced out", side: "right" }, ticksuffix: "%", thickness: 13, len: 0.75 } };
-    const layout = { mapbox: { style: "open-street-map", center: { lat: 33.02, lon: -116.9 }, zoom: 8.15 }, margin: { l: 0, r: 0, t: 0, b: 0 }, paper_bgcolor: "#ffffff" };
-    await window.Plotly.newPlot("map", [trace], layout, { responsive: true, displayModeBar: false });
-    statusElement.textContent = "Hover over an area to inspect modeled household need.";
-    document.getElementById("map").on("plotly_hover", (event) => showMapDetail(event.points[0].location, byCode));
+    state.mapContext = { geojson, locations, byCode };
+    await renderMapMode(true);
+    const mapElement = document.getElementById("map");
+    mapElement.on("plotly_hover", (event) => showMapDetail(event.points[0].location));
+    mapElement.on("plotly_click", (event) => showMapDetail(event.points[0].location));
+    const initialPuma = state.outreachData?.areas[0]?.puma || locations[0];
+    if (initialPuma) showMapDetail(initialPuma);
   } catch (error) {
     state.mapLoaded = false;
+    state.mapContext = null;
     statusElement.textContent = `${error.message}. Serve this folder over HTTP and check the network connection used for Census boundaries.`;
     statusElement.className = "error";
   }
 }
 
-function showMapDetail(code, byCode) {
-  const puma = byCode[code];
+function getOutreachArea(code) {
+  return state.outreachData?.areas.find((area) => area.puma === code) || null;
+}
+
+function getMapTrace() {
+  const { geojson, locations, byCode } = state.mapContext;
+  const baseTrace = {
+    type: "choroplethmapbox",
+    geojson,
+    locations,
+    featureidkey: "properties.PUMA",
+    marker: { line: { width: 1.1, color: "#ffffff" }, opacity: 0.88 },
+    hoverinfo: "text",
+  };
+
+  if (state.mapMode === "outreach-groups") {
+    const segments = state.outreachData.segments;
+    const segmentIndexes = Object.fromEntries(segments.map((segment, index) => [segment.id, index]));
+    const colorscale = segments.flatMap((segment, index) => {
+      const color = outreachGroupColors[segment.id];
+      return [[index / segments.length, color], [(index + 1) / segments.length, color]];
+    });
+    return {
+      ...baseTrace,
+      z: locations.map((code) => segmentIndexes[getOutreachArea(code)?.dominantSegmentId] ?? null),
+      zmin: -0.5,
+      zmax: segments.length - 0.5,
+      colorscale,
+      showscale: false,
+      text: locations.map((code) => {
+        const area = getOutreachArea(code);
+        if (!area) return "No outreach data";
+        return `<b>${escapeHtml(area.name)}</b><br>PUMA ${escapeHtml(area.puma)}<br><b>${escapeHtml(area.dominantSegmentName)}</b><br>${formatNumber(area.dominantSegmentCount)} households · ${area.dominantSegmentShare.toFixed(1)}% of area target<br>${formatNumber(area.marketFirst)} total market-first households`;
+      }),
+    };
+  }
+
+  return {
+    ...baseTrace,
+    z: locations.map((code) => byCode[code]?.vulnerability_rate ?? null),
+    text: locations.map((code) => {
+      const puma = byCode[code];
+      if (!puma) return "No data";
+      return `<b>${escapeHtml(puma.puma_name)}</b><br>PUMA ${escapeHtml(puma.puma_code)}<br><b>${puma.vulnerability_rate.toFixed(1)}%</b> priced out<br>${formatNumber(puma.n_vulnerable)} of ${formatNumber(puma.n_households)} households<br>Median income: ${formatMoney(puma.median_income)}<br>Modeled required income: ${formatMoney(puma.median_hlb_year)}`;
+    }),
+    colorscale: [[0, "#deecea"], [0.25, "#8fc9c3"], [0.5, "#f0b490"], [0.75, "#d56a3a"], [1, "#8f332f"]],
+    zmin: 0,
+    zmax: 70,
+    colorbar: { title: { text: "% priced out", side: "right" }, ticksuffix: "%", thickness: 13, len: 0.75 },
+  };
+}
+
+function renderMapGroupLegend() {
+  const legend = document.getElementById("map-group-legend");
+  if (!state.outreachData) {
+    legend.innerHTML = "";
+    return;
+  }
+  legend.innerHTML = state.outreachData.segments.map((segment) => `
+    <div class="map-legend-item" title="${escapeHtml(segment.name)}">
+      <span class="map-color-dot" style="background:${outreachGroupColors[segment.id]}"></span>
+      <span>${escapeHtml(outreachGroupMapLabels[segment.id])}</span>
+    </div>
+  `).join("");
+}
+
+async function renderMapMode(useNewPlot = false) {
+  if (!state.mapContext) return;
+  const groupMode = state.mapMode === "outreach-groups";
+  document.getElementById("map-layer-title").textContent = groupMode
+    ? "Largest outreach group by PUMA"
+    : "Household vulnerability by PUMA";
+  document.getElementById("map-layer-description").textContent = groupMode
+    ? "Each area is colored by its largest market-first audience group; the detail panel shows the full local mix."
+    : "Higher percentages indicate a larger share of households below the modeled basic-needs threshold.";
+  const statusElement = document.getElementById("map-status");
+  statusElement.className = "";
+  statusElement.textContent = groupMode
+    ? "Dominant means the largest of six audience groups in the area—not necessarily a majority."
+    : "Hover over an area to inspect modeled household need.";
+  document.getElementById("map").setAttribute("aria-label", groupMode
+    ? "Map of the largest ownership-program outreach group by San Diego County PUMA"
+    : "Map of household vulnerability by San Diego County PUMA");
+  renderMapGroupLegend();
+  document.getElementById("map-group-legend").hidden = !groupMode;
+
+  const layout = {
+    mapbox: { style: "open-street-map", center: { lat: 33.02, lon: -116.9 }, zoom: 8.15 },
+    margin: { l: 0, r: 0, t: 0, b: 0 },
+    paper_bgcolor: "#ffffff",
+    uirevision: "housing-planning-map",
+  };
+  const plotConfig = { responsive: true, displayModeBar: false };
+  if (useNewPlot) {
+    await window.Plotly.newPlot("map", [getMapTrace()], layout, plotConfig);
+  } else {
+    await window.Plotly.react("map", [getMapTrace()], layout, plotConfig);
+  }
+}
+
+function renderMapGroupBreakdown(area) {
+  const container = document.getElementById("detail-group-breakdown");
+  if (!area) {
+    container.innerHTML = "";
+    return;
+  }
+  const groups = state.outreachData.segments
+    .map((segment) => ({ ...segment, areaCount: area.segmentCounts[segment.id] || 0 }))
+    .sort((a, b) => b.areaCount - a.areaCount || a.priority - b.priority);
+  container.innerHTML = `
+    <div class="map-group-breakdown-head">
+      <p class="eyebrow">LOCAL GROUP MIX</p>
+      <h3>${formatNumber(area.marketFirst)} market-first households</h3>
+      <p>Modeled audience counts for campaign and partner planning.</p>
+    </div>
+    <div class="map-group-mix">
+      ${groups.map((group) => `
+        <div class="map-group-row">
+          <span class="map-color-dot" style="background:${outreachGroupColors[group.id]}"></span>
+          <div class="map-group-copy"><span title="${escapeHtml(group.name)}">${escapeHtml(group.name)}</span><small>${area.marketFirst ? (group.areaCount / area.marketFirst * 100).toFixed(1) : "0.0"}% of area target</small></div>
+          <strong>${formatNumber(group.areaCount)}</strong>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
+function showMapDetail(code) {
+  const puma = state.mapContext?.byCode[code];
   if (!puma) return;
+  const area = getOutreachArea(code);
+  const groupMode = state.mapMode === "outreach-groups";
+  state.selectedMapPuma = code;
+  document.getElementById("map-detail").classList.toggle("group-mode", groupMode);
   document.getElementById("detail-name").textContent = puma.puma_name;
   document.getElementById("detail-code").textContent = `PUMA ${puma.puma_code}`;
-  document.getElementById("detail-vuln").textContent = `${puma.vulnerability_rate.toFixed(1)}%`;
-  document.getElementById("detail-n").textContent = `${formatNumber(puma.n_vulnerable)} / ${formatNumber(puma.n_households)}`;
+  document.getElementById("detail-hero-label").textContent = groupMode ? "Largest outreach group" : "Households priced out";
+  document.getElementById("detail-count-label").textContent = groupMode ? "Group / area target" : "Vulnerable / modeled";
+  document.getElementById("detail-vuln").textContent = groupMode && area ? area.dominantSegmentName : `${puma.vulnerability_rate.toFixed(1)}%`;
+  document.getElementById("detail-n").textContent = groupMode && area
+    ? `${formatNumber(area.dominantSegmentCount)} / ${formatNumber(area.marketFirst)} (${area.dominantSegmentShare.toFixed(1)}%)`
+    : `${formatNumber(puma.n_vulnerable)} / ${formatNumber(puma.n_households)}`;
   document.getElementById("detail-income").textContent = formatMoney(puma.median_income);
   document.getElementById("detail-hlb").textContent = formatMoney(puma.median_hlb_year);
   document.getElementById("detail-gap").textContent = `${formatMoney(puma.median_gap_vulnerable)} / year`;
+  renderMapGroupBreakdown(area);
 }
 
 function bindEvents() {
@@ -1250,6 +1409,18 @@ function bindEvents() {
   document.querySelector(".mobile-menu").addEventListener("click", (event) => {
     const open = document.querySelector(".sidebar").classList.toggle("open");
     event.currentTarget.setAttribute("aria-expanded", String(open));
+  });
+  document.getElementById("map-mode").addEventListener("change", async (event) => {
+    state.mapMode = event.target.value;
+    if (!state.mapContext) return;
+    try {
+      await renderMapMode();
+      showMapDetail(state.selectedMapPuma || state.outreachData.areas[0]?.puma);
+    } catch (error) {
+      const statusElement = document.getElementById("map-status");
+      statusElement.textContent = `The map layer could not be changed (${error.message}).`;
+      statusElement.className = "error";
+    }
   });
 
   document.getElementById("outreach-search").addEventListener("input", (event) => {

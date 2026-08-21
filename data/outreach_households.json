@@ -200,154 +200,418 @@
       "name": "San Diego City SE (Encanto & Skyline)",
       "marketFirst": 4599,
       "considerNext": 1168,
-      "shareOfMarketFirst": 7.6
+      "shareOfMarketFirst": 7.6,
+      "segmentCounts": {
+        "young-emerging": 490,
+        "school-emerging": 1371,
+        "young-moderate": 573,
+        "school-moderate": 717,
+        "adult-emerging": 616,
+        "adult-moderate": 832
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 1371,
+      "dominantSegmentShare": 29.8
     },
     {
       "puma": "07330",
       "name": "Chula Vista (West) & National City",
       "marketFirst": 4572,
       "considerNext": 2134,
-      "shareOfMarketFirst": 7.5
+      "shareOfMarketFirst": 7.5,
+      "segmentCounts": {
+        "young-emerging": 822,
+        "school-emerging": 1604,
+        "young-moderate": 278,
+        "school-moderate": 612,
+        "adult-emerging": 664,
+        "adult-moderate": 592
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 1604,
+      "dominantSegmentShare": 35.1
     },
     {
       "puma": "07301",
       "name": "Oceanside & Camp Pendleton",
       "marketFirst": 4312,
       "considerNext": 1682,
-      "shareOfMarketFirst": 7.1
+      "shareOfMarketFirst": 7.1,
+      "segmentCounts": {
+        "young-emerging": 881,
+        "school-emerging": 1259,
+        "young-moderate": 583,
+        "school-moderate": 700,
+        "adult-emerging": 440,
+        "adult-moderate": 449
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 1259,
+      "dominantSegmentShare": 29.2
     },
     {
       "puma": "07322",
       "name": "South San Diego / Otay Mesa & South Bay",
       "marketFirst": 4245,
       "considerNext": 1269,
-      "shareOfMarketFirst": 7.0
+      "shareOfMarketFirst": 7.0,
+      "segmentCounts": {
+        "young-emerging": 673,
+        "school-emerging": 1369,
+        "young-moderate": 506,
+        "school-moderate": 651,
+        "adult-emerging": 557,
+        "adult-moderate": 489
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 1369,
+      "dominantSegmentShare": 32.2
     },
     {
       "puma": "07313",
       "name": "El Cajon & Santee",
       "marketFirst": 3790,
       "considerNext": 909,
-      "shareOfMarketFirst": 6.3
+      "shareOfMarketFirst": 6.3,
+      "segmentCounts": {
+        "young-emerging": 649,
+        "school-emerging": 961,
+        "young-moderate": 643,
+        "school-moderate": 689,
+        "adult-emerging": 354,
+        "adult-moderate": 494
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 961,
+      "dominantSegmentShare": 25.4
     },
     {
       "puma": "07329",
       "name": "Sweetwater / Chula Vista (East)",
       "marketFirst": 3584,
       "considerNext": 2661,
-      "shareOfMarketFirst": 5.9
+      "shareOfMarketFirst": 5.9,
+      "segmentCounts": {
+        "young-emerging": 265,
+        "school-emerging": 811,
+        "young-moderate": 774,
+        "school-moderate": 1141,
+        "adult-emerging": 167,
+        "adult-moderate": 426
+      },
+      "dominantSegmentId": "school-moderate",
+      "dominantSegmentName": "School-age families blocked by prices",
+      "dominantSegmentCount": 1141,
+      "dominantSegmentShare": 31.8
     },
     {
       "puma": "07317",
       "name": "Mid-City (City Heights area)",
       "marketFirst": 3394,
       "considerNext": 1179,
-      "shareOfMarketFirst": 5.6
+      "shareOfMarketFirst": 5.6,
+      "segmentCounts": {
+        "young-emerging": 542,
+        "school-emerging": 1339,
+        "young-moderate": 279,
+        "school-moderate": 265,
+        "adult-emerging": 705,
+        "adult-moderate": 264
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 1339,
+      "dominantSegmentShare": 39.5
     },
     {
       "puma": "07328",
       "name": "Lemon Grove, La Presa & Spring Valley",
       "marketFirst": 3226,
       "considerNext": 1069,
-      "shareOfMarketFirst": 5.3
+      "shareOfMarketFirst": 5.3,
+      "segmentCounts": {
+        "young-emerging": 434,
+        "school-emerging": 1324,
+        "young-moderate": 529,
+        "school-moderate": 371,
+        "adult-emerging": 400,
+        "adult-moderate": 168
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 1324,
+      "dominantSegmentShare": 41.0
     },
     {
       "puma": "07306",
       "name": "Escondido (East)",
       "marketFirst": 3098,
       "considerNext": 1295,
-      "shareOfMarketFirst": 5.1
+      "shareOfMarketFirst": 5.1,
+      "segmentCounts": {
+        "young-emerging": 568,
+        "school-emerging": 741,
+        "young-moderate": 457,
+        "school-moderate": 651,
+        "adult-emerging": 353,
+        "adult-moderate": 328
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 741,
+      "dominantSegmentShare": 23.9
     },
     {
       "puma": "07315",
       "name": "Clairemont & Kearny Mesa",
       "marketFirst": 2786,
       "considerNext": 841,
-      "shareOfMarketFirst": 4.6
+      "shareOfMarketFirst": 4.6,
+      "segmentCounts": {
+        "young-emerging": 260,
+        "school-emerging": 699,
+        "young-moderate": 541,
+        "school-moderate": 563,
+        "adult-emerging": 333,
+        "adult-moderate": 390
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 699,
+      "dominantSegmentShare": 25.1
     },
     {
       "puma": "07323",
       "name": "Vista",
       "marketFirst": 2617,
       "considerNext": 1217,
-      "shareOfMarketFirst": 4.3
+      "shareOfMarketFirst": 4.3,
+      "segmentCounts": {
+        "young-emerging": 353,
+        "school-emerging": 695,
+        "young-moderate": 437,
+        "school-moderate": 490,
+        "adult-emerging": 284,
+        "adult-moderate": 358
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 695,
+      "dominantSegmentShare": 26.6
     },
     {
       "puma": "07314",
       "name": "Navajo & La Mesa",
       "marketFirst": 2491,
       "considerNext": 856,
-      "shareOfMarketFirst": 4.1
+      "shareOfMarketFirst": 4.1,
+      "segmentCounts": {
+        "young-emerging": 235,
+        "school-emerging": 650,
+        "young-moderate": 691,
+        "school-moderate": 479,
+        "adult-emerging": 168,
+        "adult-moderate": 268
+      },
+      "dominantSegmentId": "young-moderate",
+      "dominantSegmentName": "Young families priced out at mid-income",
+      "dominantSegmentCount": 691,
+      "dominantSegmentShare": 27.7
     },
     {
       "puma": "07307",
       "name": "Lakeside, Winter Gardens & Ramona",
       "marketFirst": 2425,
       "considerNext": 1002,
-      "shareOfMarketFirst": 4.0
+      "shareOfMarketFirst": 4.0,
+      "segmentCounts": {
+        "young-emerging": 251,
+        "school-emerging": 637,
+        "young-moderate": 442,
+        "school-moderate": 609,
+        "adult-emerging": 177,
+        "adult-moderate": 309
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 637,
+      "dominantSegmentShare": 26.3
     },
     {
       "puma": "07325",
       "name": "San Marcos & Escondido (West)",
       "marketFirst": 2348,
       "considerNext": 794,
-      "shareOfMarketFirst": 3.9
+      "shareOfMarketFirst": 3.9,
+      "segmentCounts": {
+        "young-emerging": 520,
+        "school-emerging": 524,
+        "young-moderate": 306,
+        "school-moderate": 544,
+        "adult-emerging": 168,
+        "adult-moderate": 286
+      },
+      "dominantSegmentId": "school-moderate",
+      "dominantSegmentName": "School-age families blocked by prices",
+      "dominantSegmentCount": 544,
+      "dominantSegmentShare": 23.2
     },
     {
       "puma": "07302",
       "name": "Fallbrook, Alpine & Valley Center",
       "marketFirst": 2156,
       "considerNext": 1131,
-      "shareOfMarketFirst": 3.6
+      "shareOfMarketFirst": 3.6,
+      "segmentCounts": {
+        "young-emerging": 302,
+        "school-emerging": 567,
+        "young-moderate": 342,
+        "school-moderate": 272,
+        "adult-emerging": 381,
+        "adult-moderate": 292
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 567,
+      "dominantSegmentShare": 26.3
     },
     {
       "puma": "07310",
       "name": "San Diego City (SW / Central Coastal)",
       "marketFirst": 1826,
       "considerNext": 400,
-      "shareOfMarketFirst": 3.0
+      "shareOfMarketFirst": 3.0,
+      "segmentCounts": {
+        "young-emerging": 341,
+        "school-emerging": 504,
+        "young-moderate": 295,
+        "school-moderate": 494,
+        "adult-emerging": 45,
+        "adult-moderate": 147
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 504,
+      "dominantSegmentShare": 27.6
     },
     {
       "puma": "07326",
       "name": "San Dieguito & Encinitas",
       "marketFirst": 1804,
       "considerNext": 947,
-      "shareOfMarketFirst": 3.0
+      "shareOfMarketFirst": 3.0,
+      "segmentCounts": {
+        "young-emerging": 81,
+        "school-emerging": 338,
+        "young-moderate": 423,
+        "school-moderate": 803,
+        "adult-emerging": 124,
+        "adult-moderate": 35
+      },
+      "dominantSegmentId": "school-moderate",
+      "dominantSegmentName": "School-age families blocked by prices",
+      "dominantSegmentCount": 803,
+      "dominantSegmentShare": 44.5
     },
     {
       "puma": "07311",
       "name": "San Diego City (NW / Del Mar Mesa)",
       "marketFirst": 1707,
       "considerNext": 796,
-      "shareOfMarketFirst": 2.8
+      "shareOfMarketFirst": 2.8,
+      "segmentCounts": {
+        "young-emerging": 67,
+        "school-emerging": 301,
+        "young-moderate": 155,
+        "school-moderate": 823,
+        "adult-emerging": 57,
+        "adult-moderate": 304
+      },
+      "dominantSegmentId": "school-moderate",
+      "dominantSegmentName": "School-age families blocked by prices",
+      "dominantSegmentCount": 823,
+      "dominantSegmentShare": 48.2
     },
     {
       "puma": "07312",
       "name": "Mira Mesa & University Heights",
       "marketFirst": 1547,
       "considerNext": 800,
-      "shareOfMarketFirst": 2.6
+      "shareOfMarketFirst": 2.6,
+      "segmentCounts": {
+        "young-emerging": 250,
+        "school-emerging": 243,
+        "young-moderate": 320,
+        "school-moderate": 240,
+        "adult-emerging": 126,
+        "adult-moderate": 368
+      },
+      "dominantSegmentId": "adult-moderate",
+      "dominantSegmentName": "Adult households facing the market gap",
+      "dominantSegmentCount": 368,
+      "dominantSegmentShare": 23.8
     },
     {
       "puma": "07324",
       "name": "Carlsbad",
       "marketFirst": 1464,
       "considerNext": 802,
-      "shareOfMarketFirst": 2.4
+      "shareOfMarketFirst": 2.4,
+      "segmentCounts": {
+        "young-emerging": 77,
+        "school-emerging": 423,
+        "young-moderate": 247,
+        "school-moderate": 452,
+        "adult-emerging": 53,
+        "adult-moderate": 212
+      },
+      "dominantSegmentId": "school-moderate",
+      "dominantSegmentName": "School-age families blocked by prices",
+      "dominantSegmentCount": 452,
+      "dominantSegmentShare": 30.9
     },
     {
       "puma": "07308",
       "name": "Rancho Bernardo & Poway",
       "marketFirst": 1377,
       "considerNext": 844,
-      "shareOfMarketFirst": 2.3
+      "shareOfMarketFirst": 2.3,
+      "segmentCounts": {
+        "young-emerging": 142,
+        "school-emerging": 304,
+        "young-moderate": 327,
+        "school-moderate": 408,
+        "adult-emerging": 96,
+        "adult-moderate": 100
+      },
+      "dominantSegmentId": "school-moderate",
+      "dominantSegmentName": "School-age families blocked by prices",
+      "dominantSegmentCount": 408,
+      "dominantSegmentShare": 29.6
     },
     {
       "puma": "07316",
       "name": "Centre City & Balboa Park",
       "marketFirst": 1224,
       "considerNext": 284,
-      "shareOfMarketFirst": 2.0
+      "shareOfMarketFirst": 2.0,
+      "segmentCounts": {
+        "young-emerging": 284,
+        "school-emerging": 364,
+        "young-moderate": 176,
+        "school-moderate": 201,
+        "adult-emerging": 115,
+        "adult-moderate": 84
+      },
+      "dominantSegmentId": "school-emerging",
+      "dominantSegmentName": "Growing school-age families",
+      "dominantSegmentCount": 364,
+      "dominantSegmentShare": 29.7
     }
   ],
   "households": [
