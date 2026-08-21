@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/styles.css">
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js" defer></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js" defer></script>
   <script src="assets/app.js" defer></script>
 </head>
 <body>
@@ -301,6 +302,34 @@
           </aside>
         </div>
         <p class="data-footnote">Household Living Budget synthetic dataset, 2024. Records represent modeled households, not identifiable people. Map color shows vulnerable household count or rate; the area sidebar adds the local mix of the six market-first outreach groups and does not imply program eligibility. PUMA boundaries are fetched from U.S. Census Bureau TIGERweb.</p>
+
+        <div class="insight-panel">
+          <h2>Vulnerability rank vs. low-mid income rank</h2>
+          <p>Each dot is one of San Diego's 22 PUMAs. Dots below the dashed line moved up in priority when ranked by near-miss share instead of overall vulnerability.</p>
+          <div class="insight-legend">
+            <span><span class="legend-dot" style="background:#2a78d6;"></span>Moved up under low-mid focus</span>
+            <span><span class="legend-dot" style="background:#c3c2b7;"></span>Moved down</span>
+          </div>
+          <div class="insight-canvas-wrap">
+            <canvas id="shiftChart" role="img" aria-label="Scatter plot comparing each PUMA's vulnerability rank against its low-mid income priority rank."></canvas>
+          </div>
+          <p class="insight-caption">Rancho Bernardo &amp; Poway (highlighted) is the closest to self-sufficient overall &mdash; the highest share of near-miss households of any PUMA &mdash; making it our target for a low-mid income program.</p>
+          <p class="insight-status" id="shift-chart-status"></p>
+        </div>
+
+        <div class="insight-panel">
+          <h2>Rancho Bernardo &amp; Poway: who are we reaching, by age?</h2>
+          <p>Real Census age data (ACS 5-Year, table S0101) for Rancho Bernardo &amp; Poway's tracts &mdash; our #1 priority area for a low-mid income program (highest share of "near-miss" households, close to self-sufficient). Shows what share of each tract's population is young adult (18-24) vs. senior (65+).</p>
+          <p class="insight-subcaption">A census tract is a small neighborhood-sized area (usually a few thousand people). Tracts below are ordered most to least urgent by overall vulnerability priority (hover a bar for each tract's exact countywide rank out of 732).</p>
+          <div class="insight-legend">
+            <span><span class="legend-dot legend-dot-square" style="background:#2a78d6;"></span>18-24 years (%)</span>
+            <span><span class="legend-dot legend-dot-square" style="background:#eb6834;"></span>65+ years (%)</span>
+          </div>
+          <div class="insight-canvas-wrap">
+            <canvas id="ageChart" role="img" aria-label="Grouped bar chart of age composition across Rancho Bernardo and Poway priority tracts."></canvas>
+          </div>
+          <p class="insight-status" id="age-chart-status"></p>
+        </div>
       </section>
 
       <section class="view" id="overview-view" data-view-panel="overview">
