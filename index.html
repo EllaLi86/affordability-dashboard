@@ -87,7 +87,7 @@
 
         <div class="prototype-notice" role="note">
           <span class="notice-icon" aria-hidden="true">i</span>
-          <div><strong>Human review required.</strong> Priority assists review order only. Final property eligibility and placement decisions use published property requirements and staff review.</div>
+          <div><strong>Human review required.</strong> Priority assists review order only. The HLB and affordability gap are regression estimates trained on synthetic 2024 household data; final property eligibility and placement decisions use published requirements and staff review.</div>
           <button type="button" id="open-method">How matching works</button>
         </div>
 
@@ -473,7 +473,7 @@
         <h3>Income and housing need</h3>
         <div class="form-grid">
           <label>Annual household income<input name="income" type="number" min="0" step="500" value="42000" required></label>
-          <label>Modeled annual HLB<input name="hlb" type="number" min="1" step="500" value="118000" required></label>
+          <div class="model-estimate-field"><span>Regression-estimated annual HLB</span><strong id="intake-hlb-estimate">—</strong><small>Calculated from location and household composition</small></div>
           <label>Current housing situation
             <select name="housing" required>
               <option value="eviction">Eviction or move-out notice</option>

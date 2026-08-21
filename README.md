@@ -13,7 +13,8 @@ review, matching, and placement.
 
 All applicant records included in the repository are fictional demonstration records. The HLB
 source records used for the map and the analysis charts are synthetic households, not identifiable
-people.
+people. The HLB displayed for an application is now a regression estimate based on that fictional
+record's location and household composition rather than a manually entered value.
 
 ## What it shows
 
@@ -61,6 +62,27 @@ Results use cautious labels such as `Potential match`, `Likely eligible`, `Verif
 and `Not suitable`, always with a reason. These are staff decision aids—not approvals, denials, or
 final eligibility findings. HLB remains context for affordability need and does not replace a
 property's formal income requirements.
+
+### HLB regression estimate
+
+The application workspace loads `data/hlb_regression_model.json`, a ridge regression trained on
+1,054,011 synthetic households with 117,112 additional rows held out for evaluation. It predicts
+`hlb_year` from fields that can reasonably be collected during intake:
+
+- PUMA;
+- number of adults and children;
+- household-size band; and
+- youngest-child age band.
+
+Household income, the source cost components, and `economically_vulnerable` are deliberately
+excluded. Income is used only after prediction to calculate `income − estimated HLB`. On the held-out
+rows, the model has a $6,324 mean absolute error, 6.39% mean absolute percentage error, and an R² of
+0.9575. Because error is larger for four-person and five-or-more-person households, the case panel
+also displays an empirical 90% validation range for the selected household-size band.
+
+This is an explainable planning estimate in constant 2024 dollars. It is not observed spending, a
+benefit calculation, a mortgage decision, or a final eligibility threshold. PUMA is broader than a
+census tract, so the estimate cannot reproduce tract-level housing-cost differences.
 
 ## Mortgage and purchase-assistance matching
 
@@ -167,6 +189,7 @@ and the Census percentages carry their own published margins of error.
 ├── data/
 │   ├── applications.json      # fictional application records for the prototype
 │   ├── buyer_profiles.json     # fictional buyer-readiness and purchase-planning inputs
+│   ├── hlb_regression_model.json # regression coefficients, schema, and validation metrics
 │   ├── low_mid_income_priority.json # PUMAs ranked by low-to-middle income (near-miss) priority
 │   ├── mortgage_programs.json  # published program features and official source links
 │   ├── outreach_households.json # modeled counts and representative synthetic outreach rows
@@ -178,7 +201,8 @@ and the Census percentages carry their own published margins of error.
 │   ├── build_outreach_data.py # regenerates the compact outreach-planning dataset
 │   ├── build_tract_affordability.py # regenerates census-tract-level affordability stats
 │   ├── fetch_age_demographics.py # regenerates data/tract_age_demographics.json (needs a Census API key)
-│   └── rank_low_mid_income.py # regenerates data/low_mid_income_priority.json
+│   ├── rank_low_mid_income.py # regenerates data/low_mid_income_priority.json
+│   └── train_hlb_regression.py # trains and exports the application HLB regression
 └── README.md
 ```
 
@@ -216,6 +240,15 @@ To regenerate the outreach audience from the same source CSV:
 ```bash
 python scripts/build_outreach_data.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
 ```
+
+To retrain the HLB regression and refresh its held-out validation metrics:
+
+```bash
+python scripts/train_hlb_regression.py /path/to/san_diego_ca_hlb_hackathon_2024_20260811.csv
+```
+
+This overwrites `data/hlb_regression_model.json`. The split is deterministic, so repeated runs on
+the same source data produce the same coefficients and metrics.
 
 To regenerate the low-to-middle income ranking behind the Area insights scatter chart:
 

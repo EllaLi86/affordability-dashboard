@@ -8,6 +8,7 @@ const state = {
   properties: [],
   buyerProfiles: [],
   mortgagePrograms: [],
+  hlbModel: null,
   selectedId: null,
   selectedBuyerId: "HA-260211",
   statusGroup: "all",
@@ -144,6 +145,55 @@ function householdSize(application) {
   return Number(application.adults) + Number(application.children);
 }
 
+function youngestChildBand(application) {
+  if (Number(application.children) <= 0) return "none";
+  const age = Number(application.youngestChild);
+  if (age < 1) return "infant";
+  if (age <= 3) return "toddler";
+  if (age <= 5) return "preschooler";
+  if (age <= 11) return "schooler";
+  return "teenager";
+}
+
+function estimateApplicationHlb(application) {
+  const storedValue = Number(application.hlb) || 0;
+  const model = state.hlbModel;
+  if (!model) return { value: storedValue, lower: storedValue, upper: storedValue, modelBased: false, p90Error: 0 };
+
+  const schema = model.featureSchema;
+  const coefficients = model.coefficients;
+  const pumaIndex = schema.pumas.indexOf(String(application.puma));
+  if (pumaIndex < 0) return { value: storedValue, lower: storedValue, upper: storedValue, modelBased: false, p90Error: 0 };
+
+  const adults = Math.max(0, Number(application.adults) || 0);
+  const children = Math.max(0, Number(application.children) || 0);
+  const sizeBucket = clamp(Math.round(adults + children), 1, 5) - 1;
+  const bandIndex = Math.max(0, schema.youngestBands.indexOf(youngestChildBand(application)));
+  const offsets = schema.offsets;
+  let predicted = coefficients[offsets.intercept]
+    + coefficients[offsets.numeric] * adults
+    + coefficients[offsets.numeric + 1] * children
+    + coefficients[offsets.numeric + 2] * adults * adults
+    + coefficients[offsets.numeric + 3] * children * children
+    + coefficients[offsets.numeric + 4] * adults * children;
+  predicted += coefficients[offsets.puma + pumaIndex];
+  predicted += coefficients[offsets.householdSize + sizeBucket];
+  predicted += coefficients[offsets.youngestBand + bandIndex];
+  predicted += coefficients[offsets.sizeYoungest + sizeBucket * schema.youngestBands.length + bandIndex];
+  predicted += coefficients[offsets.pumaSize + pumaIndex * schema.sizeBuckets.length + sizeBucket];
+
+  const value = Math.max(0, Math.round(predicted / 100) * 100);
+  const sizeMetrics = model.metrics.byHouseholdSize[String(sizeBucket + 1)];
+  const p90Error = Number(sizeMetrics?.p90AbsoluteError || model.metrics.p90AbsoluteError || 0);
+  return {
+    value,
+    lower: Math.max(0, Math.round((value - p90Error) / 100) * 100),
+    upper: Math.round((value + p90Error) / 100) * 100,
+    modelBased: true,
+    p90Error,
+  };
+}
+
 function bedroomNeed(application) {
   if (application.bedroomNeed) return Number(application.bedroomNeed);
   const size = householdSize(application);
@@ -160,7 +210,7 @@ function bedroomNeedLabel(application) {
 }
 
 function affordabilityGap(application) {
-  return Number(application.income) - Number(application.hlb);
+  return Number(application.income) - estimateApplicationHlb(application).value;
 }
 
 function formatGapCompact(value) {
@@ -177,7 +227,8 @@ function getDocumentSummary(application) {
 }
 
 function getPriority(application) {
-  const coverage = application.hlb > 0 ? application.income / application.hlb : 1;
+  const estimatedHlb = estimateApplicationHlb(application).value;
+  const coverage = estimatedHlb > 0 ? application.income / estimatedHlb : 1;
   const financial = Math.round(clamp((1 - coverage) * 53.34, 0, 40));
   const housingPoints = { "unhoused": 25, "eviction": 21, "temporary": 14, "severe-burden": 10, "stable": 0 };
   const housing = housingPoints[application.housing] || 0;
@@ -893,7 +944,7 @@ function renderTable() {
       <tr data-application-id="${escapeHtml(application.id)}" class="${isSelected ? "selected" : ""}" tabindex="0" aria-selected="${isSelected}">
         <td><div class="applicant-cell"><span class="applicant-avatar">${escapeHtml(initials(application.applicant))}</span><div><strong>${escapeHtml(application.applicant)}</strong><span>${escapeHtml(application.id)} · ${statusLabels[application.status]}</span><span class="table-financing-state ${mortgageLinked ? "linked" : "review"}">${mortgageLinked ? "$ Mortgage linked" : "Financing review"}</span></div></div></td>
         <td><div class="cell-stack"><strong>${size} people</strong><span>${application.children} ${application.children === 1 ? "child" : "children"}</span></div></td>
-        <td><div class="cell-stack gap-cell"><strong>${formatGapCompact(affordabilityGap(application))}</strong><span>affordability gap</span></div></td>
+        <td><div class="cell-stack gap-cell"><strong>${formatGapCompact(affordabilityGap(application))}</strong><span>regression-estimated gap</span></div></td>
         <td><div class="cell-stack"><strong>${bedroomNeedLabel(application)}</strong><span>${escapeHtml(application.area.split("&")[0].trim())}</span></div></td>
         <td><div class="cell-stack match-cell"><strong>${matches.viable.length} housing ${matches.viable.length === 1 ? "match" : "matches"}</strong><span>${matches.likely.length} likely · ${matches.verification.length} verify</span></div></td>
         <td><div class="cell-stack document-cell"><strong>${docs.completed}/${docs.total} documents</strong><span class="${docs.complete ? "complete-text" : "missing-text"}">${docs.complete ? "Complete" : `${docs.missing.length} missing`}</span></div></td>
@@ -939,6 +990,7 @@ function renderCasePanel() {
   const priority = getPriority(application);
   const nextAction = getNextAction(application, docs, matches);
   const gap = affordabilityGap(application);
+  const hlbEstimate = estimateApplicationHlb(application);
   const transition = getNextStage(application.status);
   const buyerProfile = state.buyerProfiles.find((profile) => profile.applicationId === application.id);
   const mortgageLinked = application.financingPath === "mortgage-matching" && Boolean(buyerProfile);
@@ -979,10 +1031,11 @@ function renderCasePanel() {
           <h3>Financial situation</h3>
           <div class="financial-facts">
             <div><span>Annual household income</span><strong>${formatMoney(application.income)}</strong></div>
-            <div><span>Estimated basic-needs threshold</span><strong>${formatMoney(application.hlb)}</strong></div>
-            <div class="gap-fact"><span>Annual affordability gap</span><strong>${formatMoney(gap)} / year</strong></div>
+            <div><span>Regression-estimated HLB</span><strong>${formatMoney(hlbEstimate.value)}</strong></div>
+            <div><span>90% validation range</span><strong>${formatMoney(hlbEstimate.lower)}–${formatMoney(hlbEstimate.upper)}</strong></div>
+            <div class="gap-fact"><span>Estimated annual affordability gap</span><strong>${formatMoney(gap)} / year</strong></div>
           </div>
-          <p class="section-note">The synthetic Household Living Budget is context for need. It is not a final property eligibility determination.</p>
+          <p class="section-note"><span class="model-source-badge">Regression estimate</span> Trained on 1,054,011 synthetic HLB households using PUMA, adults, children, household size, and youngest-child age band. Held-out average error: ${formatMoney(state.hlbModel?.metrics.mae || 0)} per year. This is 2024 planning context—not observed spending or a final eligibility determination.</p>
         </section>
 
         <section class="case-section financing-section">
@@ -1158,28 +1211,46 @@ function switchView(viewName) {
 function updateIntakePreview() {
   const form = document.getElementById("intake-form");
   const formData = new FormData(form);
-  const gap = Number(formData.get("income")) - Number(formData.get("hlb"));
-  document.getElementById("intake-eligibility-label").textContent = `Affordability gap: ${formatMoney(gap)} / year`;
-  document.getElementById("intake-checks").textContent = "0/9";
+  const draft = {
+    adults: Number(formData.get("adults")),
+    children: Number(formData.get("children")),
+    youngestChild: Number(formData.get("youngestChild")),
+    puma: String(formData.get("puma")),
+    hlb: 0,
+  };
+  const estimate = estimateApplicationHlb(draft);
+  const gap = Number(formData.get("income")) - estimate.value;
+  document.getElementById("intake-hlb-estimate").textContent = formatMoney(estimate.value);
+  document.getElementById("intake-eligibility-label").textContent = `Estimated affordability gap: ${formatMoney(gap)} / year`;
+  document.getElementById("intake-checks").textContent = "MODEL";
 }
 
 function addApplication(form) {
   const formData = new FormData(form);
   const pumaSelect = form.elements.puma;
   const sequence = 230 + state.applications.filter((application) => application.id.startsWith("HA-LOCAL")).length + 1;
+  const modelInputs = {
+    adults: Number(formData.get("adults")),
+    children: Number(formData.get("children")),
+    youngestChild: Number(formData.get("youngestChild")),
+    puma: String(formData.get("puma")),
+    hlb: 0,
+  };
+  const hlbEstimate = estimateApplicationHlb(modelInputs);
   const application = {
     id: `HA-LOCAL-${sequence}`,
     applicant: String(formData.get("applicant")).trim(),
     submitted: currentReviewDate().toISOString().slice(0, 10),
     status: "new",
-    adults: Number(formData.get("adults")),
-    children: Number(formData.get("children")),
-    youngestChild: Number(formData.get("youngestChild")) || 18,
+    adults: modelInputs.adults,
+    children: modelInputs.children,
+    youngestChild: modelInputs.children > 0 ? modelInputs.youngestChild : 18,
     income: Number(formData.get("income")),
-    hlb: Number(formData.get("hlb")),
+    hlb: hlbEstimate.value,
+    hlbSource: "regression-v1",
     housing: String(formData.get("housing")),
     bedroomNeed: Number(formData.get("bedrooms")),
-    puma: String(formData.get("puma")),
+    puma: modelInputs.puma,
     area: pumaSelect.options[pumaSelect.selectedIndex].text,
     language: String(formData.get("language")),
     contact: "Not recorded",
@@ -1749,18 +1820,20 @@ function bindEvents() {
 async function initialize() {
   bindEvents();
   try {
-    const [applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse, outreachResponse] = await Promise.all([
+    const [applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse, outreachResponse, hlbModelResponse] = await Promise.all([
       fetch("data/applications.json"),
       fetch("data/properties.json"),
       fetch("data/buyer_profiles.json"),
       fetch("data/mortgage_programs.json"),
       fetch("data/outreach_households.json"),
+      fetch("data/hlb_regression_model.json"),
     ]);
-    if (![applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse, outreachResponse].every((response) => response.ok)) throw new Error("One or more data files could not be loaded");
+    if (![applicationsResponse, propertiesResponse, buyerProfilesResponse, mortgageProgramsResponse, outreachResponse, hlbModelResponse].every((response) => response.ok)) throw new Error("One or more data files could not be loaded");
     state.properties = await propertiesResponse.json();
     state.buyerProfiles = await buyerProfilesResponse.json();
     state.mortgagePrograms = await mortgageProgramsResponse.json();
     state.outreachData = await outreachResponse.json();
+    state.hlbModel = await hlbModelResponse.json();
     state.outreachStatuses = loadOutreachStatuses();
     state.outreachCampaignGroups = loadOutreachCampaignGroups()
       .filter((id) => state.outreachData.segments.some((segment) => segment.id === id));
