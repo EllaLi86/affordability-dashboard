@@ -21,11 +21,16 @@ stats. Built from the San Diego HLB Hackathon 2024 dataset.
 
 ```
 .
-├── index.html            # the whole dashboard (Plotly.js + vanilla JS, no build step)
+├── index.html                       # the whole dashboard (Plotly.js + Chart.js + vanilla JS, no build step)
 ├── data/
-│   └── puma_stats.json   # small (22-row) precomputed PUMA-level summary
+│   ├── puma_stats.json              # precomputed PUMA-level summary
+│   ├── low_mid_income_priority.json # PUMAs ranked by low-mid income (near-miss) priority
+│   └── tract_age_demographics.json  # real Census age data for Chula Vista/National City tracts
 ├── scripts/
-│   └── build_data.py     # regenerates data/puma_stats.json from the raw CSV
+│   ├── build_data.py                # regenerates data/puma_stats.json from the raw CSV
+│   ├── build_tract_affordability.py # regenerates census-tract-level affordability stats
+│   ├── rank_low_mid_income.py       # regenerates data/low_mid_income_priority.csv/.json
+│   └── fetch_age_demographics.py    # regenerates data/tract_age_demographics.json (needs a Census API key)
 └── README.md
 ```
 
