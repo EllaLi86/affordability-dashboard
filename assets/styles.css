@@ -202,7 +202,6 @@ textarea:focus-visible,
 .breadcrumb strong { color: var(--ink); }
 .topbar-actions { display: flex; align-items: center; gap: 8px; }
 .topbar-actions .icon-button { font-size: 8px; color: var(--teal-600); }
-.help-button { border: 0; background: transparent; color: var(--teal-700); font-weight: 700; }
 .mobile-menu { display: none; border: 0; background: none; color: var(--navy-900); font-size: 20px; }
 
 .view { display: none; padding: 30px; }
@@ -826,7 +825,6 @@ h3 { font-family: var(--font-display); color: var(--navy-950); }
 }
 
 @media (max-width: 460px) {
-  .help-button { display: none; }
   .metric-grid { grid-template-columns: 1fr; }
   .metric-card { min-height: 92px; }
   .status-tabs { gap: 15px; }
